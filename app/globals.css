@@ -1,4 +1,4 @@
-@import "tailwindcss";
+﻿@import "tailwindcss";
 
 :root {
   --background: #0b1020;
@@ -37,38 +37,4 @@ textarea {
 
 ::selection {
   background: rgba(159, 184, 255, 0.24);
-}
-
-@media print {
-  html,
-  body {
-    background: #ffffff !important;
-    color: #000000 !important;
-  }
-
-  [data-no-print] {
-    display: none !important;
-  }
-
-  nav,
-  button {
-    display: none !important;
-  }
-
-  main,
-  section,
-  div {
-    box-shadow: none !important;
-    backdrop-filter: none !important;
-  }
-
-  body * {
-    color: #000 !important;
-    background: transparent !important;
-    border-color: #d1d5db !important;
-  }
-
-  a {
-    text-decoration: underline !important;
-  }
 }

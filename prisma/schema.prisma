@@ -1,0 +1,54 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum EntryKind {
+  ANALYSIS
+  COMPARISON
+}
+
+enum AnalysisMode {
+  INTERNAL_ONLY
+  EXTERNAL_RESEARCH
+}
+
+enum InputMode {
+  TEXT
+  PDF
+  MIXED
+}
+
+model HistoryEntry {
+  id                 String       @id @default(cuid())
+  kind               EntryKind
+  mode               AnalysisMode
+  inputMode          InputMode
+  title              String?
+  author             String?
+  documentType       String?
+  publicationContext String?
+  sourceFileName     String?
+
+  documentATitle     String?
+  documentBTitle     String?
+  sourceFileNameA    String?
+  sourceFileNameB    String?
+
+  rawText            String?
+  rawTextA           String?
+  rawTextB           String?
+
+  resultJson         Json
+  sourcesJson        Json?
+
+  createdAt          DateTime     @default(now())
+
+  @@index([createdAt(sort: Desc)])
+  @@index([kind, createdAt(sort: Desc)])
+  @@index([mode, createdAt(sort: Desc)])
+}
