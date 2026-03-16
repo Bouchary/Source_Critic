@@ -12,40 +12,15 @@ import {
   COMPARE_EXTERNAL_SYSTEM_PROMPT,
   COMPARISON_JSON_SCHEMA,
 } from "@/lib/compare-prompts";
-import { clampScore } from "@/lib/utils";
 import { saveComparisonToDb } from "@/lib/history-db";
 import { createExternalStructuredResponse } from "@/lib/openai-external";
+import {
+  buildDeterministicComparisonResult,
+  type ComparisonModelOutput,
+} from "@/lib/compare-scoring";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-
-function normalizeComparisonScores(result: ComparisonResult): ComparisonResult {
-  return {
-    ...result,
-    overallAssessment: {
-      convergenceLevel: {
-        ...result.overallAssessment.convergenceLevel,
-        score: clampScore(result.overallAssessment.convergenceLevel.score),
-      },
-      divergenceIntensity: {
-        ...result.overallAssessment.divergenceIntensity,
-        score: clampScore(result.overallAssessment.divergenceIntensity.score),
-      },
-      framingGap: {
-        ...result.overallAssessment.framingGap,
-        score: clampScore(result.overallAssessment.framingGap.score),
-      },
-      supportAsymmetry: {
-        ...result.overallAssessment.supportAsymmetry,
-        score: clampScore(result.overallAssessment.supportAsymmetry.score),
-      },
-      comparability: {
-        ...result.overallAssessment.comparability,
-        score: clampScore(result.overallAssessment.comparability.score),
-      },
-    },
-  };
-}
 
 export async function POST(req: Request) {
   try {
@@ -124,14 +99,14 @@ export async function POST(req: Request) {
 
     if (external) {
       const externalResponse =
-        await createExternalStructuredResponse<ComparisonResult>({
+        await createExternalStructuredResponse<ComparisonModelOutput>({
           instructions: COMPARE_EXTERNAL_SYSTEM_PROMPT,
           input: buildCompareUserPrompt(payload),
           schema: COMPARISON_JSON_SCHEMA,
-          name: "source_critic_comparison_pdf_v31",
+          name: "source_critic_comparison_pdf_v33",
         });
 
-      result = normalizeComparisonScores(externalResponse.result);
+      result = buildDeterministicComparisonResult(externalResponse.result);
       sources = externalResponse.sources;
     } else {
       const response = await openai.responses.create({
@@ -141,7 +116,7 @@ export async function POST(req: Request) {
         text: {
           format: {
             type: "json_schema",
-            name: "source_critic_comparison_pdf_v31_internal",
+            name: "source_critic_comparison_pdf_v33_internal",
             schema: COMPARISON_JSON_SCHEMA,
             strict: true,
           },
@@ -157,7 +132,9 @@ export async function POST(req: Request) {
         );
       }
 
-      result = normalizeComparisonScores(JSON.parse(raw) as ComparisonResult);
+      result = buildDeterministicComparisonResult(
+        JSON.parse(raw) as ComparisonModelOutput,
+      );
     }
 
     const inputMode: "text" | "pdf" | "mixed" =

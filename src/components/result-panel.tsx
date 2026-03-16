@@ -1,7 +1,10 @@
-﻿import type { AnalysisResult } from "@/lib/schema";
+﻿"use client";
+
+import type { AnalysisResult } from "@/lib/schema";
 import { ScoreBadge } from "@/components/score-badge";
 import { SectionCard } from "@/components/section-card";
 import { ExportReportButton } from "@/components/export-report-button";
+import { ReportTabs, type ReportTabItem } from "@/components/report-tabs";
 import {
   AlertTriangle,
   BadgeInfo,
@@ -37,30 +40,16 @@ function ScoreRow({
 }
 
 export function ResultPanel({ result }: ResultPanelProps) {
-  return (
-    <div className="grid gap-6">
-      <div className="flex justify-end" data-no-print>
-        <ExportReportButton
-          targetId="analysis-report-export"
-          fileTitle={result.documentProfile.title || "rapport-analyse"}
-        />
-      </div>
-
-      <div id="analysis-report-export" className="report-content grid gap-6">
-        <SectionCard title="Résumé exécutif" icon={<FileText className="h-5 w-5" />}>
+  const tabs: ReportTabItem[] = [
+    {
+      id: "overview",
+      label: "Résumé",
+      content: (
+        <SectionCard title="Vue d’ensemble" icon={<FileText className="h-5 w-5" />}>
           <div className="grid gap-4">
             <div className="rounded-2xl border border-white/10 bg-slate-950/30 p-4">
               <p className="break-words text-sm leading-7 text-slate-200 [overflow-wrap:anywhere]">
                 {result.executiveSummary}
-              </p>
-            </div>
-
-            <div className="rounded-2xl border border-white/10 bg-slate-950/30 p-4">
-              <h3 className="mb-2 text-sm font-medium text-white">
-                Notice méthodologique
-              </h3>
-              <p className="break-words text-sm leading-6 text-slate-300 [overflow-wrap:anywhere]">
-                {result.methodologyNotice}
               </p>
             </div>
 
@@ -101,7 +90,28 @@ export function ResultPanel({ result }: ResultPanelProps) {
             </div>
           </div>
         </SectionCard>
-
+      ),
+    },
+    {
+      id: "method",
+      label: "Notice",
+      content: (
+        <SectionCard
+          title="Notice méthodologique"
+          icon={<BadgeInfo className="h-5 w-5" />}
+        >
+          <div className="rounded-2xl border border-white/10 bg-slate-950/30 p-4">
+            <p className="break-words text-sm leading-6 text-slate-300 [overflow-wrap:anywhere]">
+              {result.methodologyNotice}
+            </p>
+          </div>
+        </SectionCard>
+      ),
+    },
+    {
+      id: "scores",
+      label: "Scores",
+      content: (
         <SectionCard title="Scores" icon={<Scale className="h-5 w-5" />}>
           <div className="grid gap-3 md:grid-cols-2">
             <ScoreRow label="Traçabilité" score={result.scores.traceability} />
@@ -127,40 +137,12 @@ export function ResultPanel({ result }: ResultPanelProps) {
             />
           </div>
         </SectionCard>
-
-        <SectionCard
-          title="Positionnement de l’auteur"
-          icon={<BadgeInfo className="h-5 w-5" />}
-        >
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="rounded-2xl border border-white/10 bg-slate-950/30 p-4">
-              <h3 className="mb-3 text-sm font-medium text-white">
-                Éléments observables
-              </h3>
-              <ul className="space-y-2 text-sm leading-6 text-slate-300">
-                {result.authorPositioning.observableElements.map((item, index) => (
-                  <li key={index} className="break-words [overflow-wrap:anywhere]">
-                    • {item}
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            <div className="rounded-2xl border border-white/10 bg-slate-950/30 p-4">
-              <h3 className="mb-3 text-sm font-medium text-white">
-                Éléments non inférables
-              </h3>
-              <ul className="space-y-2 text-sm leading-6 text-slate-300">
-                {result.authorPositioning.nonInferableElements.map((item, index) => (
-                  <li key={index} className="break-words [overflow-wrap:anywhere]">
-                    • {item}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-        </SectionCard>
-
+      ),
+    },
+    {
+      id: "claims",
+      label: "Énoncés clés",
+      content: (
         <SectionCard title="Énoncés clés" icon={<Search className="h-5 w-5" />}>
           <div className="grid gap-3">
             {result.keyClaims.map((claim) => (
@@ -191,7 +173,12 @@ export function ResultPanel({ result }: ResultPanelProps) {
             ))}
           </div>
         </SectionCard>
-
+      ),
+    },
+    {
+      id: "bias",
+      label: "Biais",
+      content: (
         <SectionCard
           title="Cartographie des biais possibles"
           icon={<Waypoints className="h-5 w-5" />}
@@ -221,7 +208,12 @@ export function ResultPanel({ result }: ResultPanelProps) {
             ))}
           </div>
         </SectionCard>
-
+      ),
+    },
+    {
+      id: "limits",
+      label: "Inconnues",
+      content: (
         <div className="grid gap-6 md:grid-cols-2">
           <SectionCard
             title="Inconnues et angles morts"
@@ -237,22 +229,29 @@ export function ResultPanel({ result }: ResultPanelProps) {
           </SectionCard>
 
           <SectionCard
-            title="Précautions de lecture"
-            icon={<ShieldAlert className="h-5 w-5" />}
+            title="Positionnement de l’auteur"
+            icon={<BadgeInfo className="h-5 w-5" />}
           >
             <div className="space-y-4">
-              <ul className="space-y-2 text-sm leading-6 text-slate-300">
-                {result.recommendations.map((item, index) => (
-                  <li key={index} className="break-words [overflow-wrap:anywhere]">
-                    • {item}
-                  </li>
-                ))}
-              </ul>
-
-              <div className="rounded-2xl border border-white/10 bg-slate-950/30 p-4">
-                <h3 className="mb-2 text-sm font-medium text-white">Réserves</h3>
+              <div>
+                <h3 className="mb-2 text-sm font-medium text-white">
+                  Éléments observables
+                </h3>
                 <ul className="space-y-2 text-sm leading-6 text-slate-300">
-                  {result.caveats.map((item, index) => (
+                  {result.authorPositioning.observableElements.map((item, index) => (
+                    <li key={index} className="break-words [overflow-wrap:anywhere]">
+                      • {item}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div>
+                <h3 className="mb-2 text-sm font-medium text-white">
+                  Éléments non inférables
+                </h3>
+                <ul className="space-y-2 text-sm leading-6 text-slate-300">
+                  {result.authorPositioning.nonInferableElements.map((item, index) => (
                     <li key={index} className="break-words [overflow-wrap:anywhere]">
                       • {item}
                     </li>
@@ -262,6 +261,52 @@ export function ResultPanel({ result }: ResultPanelProps) {
             </div>
           </SectionCard>
         </div>
+      ),
+    },
+    {
+      id: "recommendations",
+      label: "Recommandations",
+      content: (
+        <SectionCard
+          title="Précautions de lecture"
+          icon={<ShieldAlert className="h-5 w-5" />}
+        >
+          <div className="space-y-4">
+            <ul className="space-y-2 text-sm leading-6 text-slate-300">
+              {result.recommendations.map((item, index) => (
+                <li key={index} className="break-words [overflow-wrap:anywhere]">
+                  • {item}
+                </li>
+              ))}
+            </ul>
+
+            <div className="rounded-2xl border border-white/10 bg-slate-950/30 p-4">
+              <h3 className="mb-2 text-sm font-medium text-white">Réserves</h3>
+              <ul className="space-y-2 text-sm leading-6 text-slate-300">
+                {result.caveats.map((item, index) => (
+                  <li key={index} className="break-words [overflow-wrap:anywhere]">
+                    • {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </SectionCard>
+      ),
+    },
+  ];
+
+  return (
+    <div className="grid gap-6">
+      <div className="flex justify-end" data-no-print>
+        <ExportReportButton
+          targetId="analysis-report-export"
+          fileTitle={result.documentProfile.title || "rapport-analyse"}
+        />
+      </div>
+
+      <div id="analysis-report-export" className="report-content grid gap-6">
+        <ReportTabs tabs={tabs} />
       </div>
     </div>
   );

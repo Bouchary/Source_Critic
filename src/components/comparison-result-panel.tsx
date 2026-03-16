@@ -1,7 +1,10 @@
+"use client";
+
 import type { ComparisonResult } from "@/lib/schema";
 import { SectionCard } from "@/components/section-card";
 import { ScoreBadge } from "@/components/score-badge";
 import { ExportReportButton } from "@/components/export-report-button";
+import { ReportTabs, type ReportTabItem } from "@/components/report-tabs";
 import {
   FileDiff,
   GitCompareArrows,
@@ -37,16 +40,11 @@ function ScoreRow({
 export function ComparisonResultPanel({
   result,
 }: ComparisonResultPanelProps) {
-  return (
-    <div className="grid gap-6">
-      <div className="flex justify-end" data-no-print>
-        <ExportReportButton
-          targetId="comparison-report-export"
-          fileTitle="rapport-comparatif"
-        />
-      </div>
-
-      <div id="comparison-report-export" className="report-content grid gap-6">
+  const tabs: ReportTabItem[] = [
+    {
+      id: "overview",
+      label: "Résumé",
+      content: (
         <SectionCard
           title="Résumé comparatif"
           icon={<GitCompareArrows className="h-5 w-5" />}
@@ -55,15 +53,6 @@ export function ComparisonResultPanel({
             <div className="rounded-2xl border border-white/10 bg-slate-950/30 p-4">
               <p className="break-words text-sm leading-7 text-slate-200 [overflow-wrap:anywhere]">
                 {result.executiveSummary}
-              </p>
-            </div>
-
-            <div className="rounded-2xl border border-white/10 bg-slate-950/30 p-4">
-              <h3 className="mb-2 text-sm font-medium text-white">
-                Notice méthodologique
-              </h3>
-              <p className="break-words text-sm leading-6 text-slate-300 [overflow-wrap:anywhere]">
-                {result.methodologyNotice}
               </p>
             </div>
 
@@ -92,7 +81,28 @@ export function ComparisonResultPanel({
             </div>
           </div>
         </SectionCard>
-
+      ),
+    },
+    {
+      id: "method",
+      label: "Notice",
+      content: (
+        <SectionCard
+          title="Notice méthodologique"
+          icon={<GitCompareArrows className="h-5 w-5" />}
+        >
+          <div className="rounded-2xl border border-white/10 bg-slate-950/30 p-4">
+            <p className="break-words text-sm leading-6 text-slate-300 [overflow-wrap:anywhere]">
+              {result.methodologyNotice}
+            </p>
+          </div>
+        </SectionCard>
+      ),
+    },
+    {
+      id: "scores",
+      label: "Évaluation",
+      content: (
         <SectionCard title="Évaluation globale" icon={<Layers3 className="h-5 w-5" />}>
           <div className="grid gap-3 md:grid-cols-2">
             <ScoreRow
@@ -117,29 +127,42 @@ export function ComparisonResultPanel({
             />
           </div>
         </SectionCard>
-
-        <div className="grid gap-6 md:grid-cols-2">
-          <SectionCard title="Points communs" icon={<FileDiff className="h-5 w-5" />}>
-            <ul className="space-y-2 text-sm leading-6 text-slate-300">
-              {result.commonPoints.map((item, index) => (
-                <li key={index} className="break-words [overflow-wrap:anywhere]">
-                  • {item}
-                </li>
-              ))}
-            </ul>
-          </SectionCard>
-
-          <SectionCard title="Divergences" icon={<FileDiff className="h-5 w-5" />}>
-            <ul className="space-y-2 text-sm leading-6 text-slate-300">
-              {result.divergences.map((item, index) => (
-                <li key={index} className="break-words [overflow-wrap:anywhere]">
-                  • {item}
-                </li>
-              ))}
-            </ul>
-          </SectionCard>
-        </div>
-
+      ),
+    },
+    {
+      id: "common",
+      label: "Points communs",
+      content: (
+        <SectionCard title="Points communs" icon={<FileDiff className="h-5 w-5" />}>
+          <ul className="space-y-2 text-sm leading-6 text-slate-300">
+            {result.commonPoints.map((item, index) => (
+              <li key={index} className="break-words [overflow-wrap:anywhere]">
+                • {item}
+              </li>
+            ))}
+          </ul>
+        </SectionCard>
+      ),
+    },
+    {
+      id: "divergences",
+      label: "Divergences",
+      content: (
+        <SectionCard title="Divergences" icon={<FileDiff className="h-5 w-5" />}>
+          <ul className="space-y-2 text-sm leading-6 text-slate-300">
+            {result.divergences.map((item, index) => (
+              <li key={index} className="break-words [overflow-wrap:anywhere]">
+                • {item}
+              </li>
+            ))}
+          </ul>
+        </SectionCard>
+      ),
+    },
+    {
+      id: "framing",
+      label: "Cadrage / étayage",
+      content: (
         <div className="grid gap-6 md:grid-cols-2">
           <SectionCard
             title="Différences de cadrage"
@@ -167,7 +190,12 @@ export function ComparisonResultPanel({
             </ul>
           </SectionCard>
         </div>
-
+      ),
+    },
+    {
+      id: "limits",
+      label: "Angles morts",
+      content: (
         <div className="grid gap-6 md:grid-cols-2">
           <SectionCard
             title="Angles morts du document A"
@@ -195,7 +223,12 @@ export function ComparisonResultPanel({
             </ul>
           </SectionCard>
         </div>
-
+      ),
+    },
+    {
+      id: "recommendations",
+      label: "Réserves",
+      content: (
         <div className="grid gap-6 md:grid-cols-2">
           <SectionCard title="Réserves" icon={<ShieldAlert className="h-5 w-5" />}>
             <ul className="space-y-2 text-sm leading-6 text-slate-300">
@@ -220,6 +253,21 @@ export function ComparisonResultPanel({
             </ul>
           </SectionCard>
         </div>
+      ),
+    },
+  ];
+
+  return (
+    <div className="grid gap-6">
+      <div className="flex justify-end" data-no-print>
+        <ExportReportButton
+          targetId="comparison-report-export"
+          fileTitle="rapport-comparatif"
+        />
+      </div>
+
+      <div id="comparison-report-export" className="report-content grid gap-6">
+        <ReportTabs tabs={tabs} />
       </div>
     </div>
   );

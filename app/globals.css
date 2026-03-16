@@ -46,3 +46,11 @@ textarea {
   word-break: break-word;
   overflow-wrap: anywhere;
 }
+.report-content a,
+.report-content p,
+.report-content li,
+.report-content blockquote,
+.report-content span {
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}

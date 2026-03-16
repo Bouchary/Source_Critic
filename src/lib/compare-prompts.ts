@@ -14,6 +14,14 @@ RÈGLES
 - Si une information manque, indique explicitement qu’elle est non déterminable.
 - Ne produis jamais de verdict de vérité absolue.
 - Ne dis jamais qui ment.
+- Tu ne calcules pas des notes libres de 0 à 100.
+- À la place, tu fournis des signaux bornés de 0 à 4 selon l’échelle suivante :
+  0 = très faible / très éloigné
+  1 = faible
+  2 = intermédiaire
+  3 = élevé
+  4 = très élevé / très proche
+- Chaque signal doit être justifié très brièvement.
 - Distingue strictement :
   1. convergences observables,
   2. divergences observables,
@@ -21,8 +29,6 @@ RÈGLES
   4. asymétries d’étayage,
   5. angles morts,
   6. limites de comparabilité.
-- Tous les scores doivent être justifiés par les deux textes fournis.
-- Si les documents sont peu comparables, indique-le clairement.
 
 FORMAT
 Réponds uniquement en JSON valide conforme au schéma attendu.
@@ -41,15 +47,15 @@ RÈGLES
 - Si une information manque, indique explicitement qu’elle est non déterminable.
 - Ne produis jamais de verdict de vérité absolue.
 - Ne dis jamais qui ment.
-- Distingue strictement :
-  1. convergences observables,
-  2. divergences observables,
-  3. différences de cadrage,
-  4. asymétries d’étayage,
-  5. angles morts,
-  6. limites de comparabilité.
+- Tu ne calcules pas des notes libres de 0 à 100.
+- À la place, tu fournis des signaux bornés de 0 à 4 selon l’échelle suivante :
+  0 = très faible / très éloigné
+  1 = faible
+  2 = intermédiaire
+  3 = élevé
+  4 = très élevé / très proche
+- Chaque signal doit être justifié très brièvement.
 - Si les sources externes ne suffisent pas, dis-le explicitement.
-- Tous les scores doivent être justifiés.
 
 FORMAT
 Réponds uniquement en JSON valide conforme au schéma attendu.
@@ -93,6 +99,12 @@ Consignes :
 - comparisonProfile.analysisScope doit expliciter la portée réelle de la comparaison selon le mode.
 - executiveSummary : 140 à 220 mots.
 - methodologyNotice : 70 à 120 mots.
+- scoreSignals.topicOverlap : degré de recouvrement thématique.
+- scoreSignals.temporalDistance : distance temporelle entre les objets traités.
+- scoreSignals.framingDistance : écart de cadrage.
+- scoreSignals.thesisConflict : degré de conflit entre les thèses / conclusions.
+- scoreSignals.evidenceAsymmetry : asymétrie d’étayage et de profondeur probatoire.
+- scoreSignals.genreDistance : distance de genre, finalité et public visé.
 - commonPoints : 4 à 8 items.
 - divergences : 4 à 8 items.
 - framingDifferences : 4 à 8 items.
@@ -101,10 +113,24 @@ Consignes :
 - blindSpots.documentB : 3 à 6 items.
 - caveats : 3 à 6 items.
 - recommendations : 4 à 8 items.
-- Les formulations doivent rester prudentes et comparatives.
-- Ne pas conclure qu’un document est vrai ou faux au sens absolu.
 `;
 }
+
+const signalSchema = {
+  type: "object",
+  additionalProperties: false,
+  properties: {
+    level: {
+      type: "integer",
+      minimum: 0,
+      maximum: 4,
+    },
+    rationale: {
+      type: "string",
+    },
+  },
+  required: ["level", "rationale"],
+} as const;
 
 export const COMPARISON_JSON_SCHEMA = {
   type: "object",
@@ -123,67 +149,24 @@ export const COMPARISON_JSON_SCHEMA = {
     },
     executiveSummary: { type: "string" },
     methodologyNotice: { type: "string" },
-    overallAssessment: {
+    scoreSignals: {
       type: "object",
       additionalProperties: false,
       properties: {
-        convergenceLevel: {
-          type: "object",
-          additionalProperties: false,
-          properties: {
-            score: { type: "number" },
-            label: { type: "string" },
-            rationale: { type: "string" },
-          },
-          required: ["score", "label", "rationale"],
-        },
-        divergenceIntensity: {
-          type: "object",
-          additionalProperties: false,
-          properties: {
-            score: { type: "number" },
-            label: { type: "string" },
-            rationale: { type: "string" },
-          },
-          required: ["score", "label", "rationale"],
-        },
-        framingGap: {
-          type: "object",
-          additionalProperties: false,
-          properties: {
-            score: { type: "number" },
-            label: { type: "string" },
-            rationale: { type: "string" },
-          },
-          required: ["score", "label", "rationale"],
-        },
-        supportAsymmetry: {
-          type: "object",
-          additionalProperties: false,
-          properties: {
-            score: { type: "number" },
-            label: { type: "string" },
-            rationale: { type: "string" },
-          },
-          required: ["score", "label", "rationale"],
-        },
-        comparability: {
-          type: "object",
-          additionalProperties: false,
-          properties: {
-            score: { type: "number" },
-            label: { type: "string" },
-            rationale: { type: "string" },
-          },
-          required: ["score", "label", "rationale"],
-        },
+        topicOverlap: signalSchema,
+        temporalDistance: signalSchema,
+        framingDistance: signalSchema,
+        thesisConflict: signalSchema,
+        evidenceAsymmetry: signalSchema,
+        genreDistance: signalSchema,
       },
       required: [
-        "convergenceLevel",
-        "divergenceIntensity",
-        "framingGap",
-        "supportAsymmetry",
-        "comparability",
+        "topicOverlap",
+        "temporalDistance",
+        "framingDistance",
+        "thesisConflict",
+        "evidenceAsymmetry",
+        "genreDistance",
       ],
     },
     commonPoints: {
@@ -230,7 +213,7 @@ export const COMPARISON_JSON_SCHEMA = {
     "comparisonProfile",
     "executiveSummary",
     "methodologyNotice",
-    "overallAssessment",
+    "scoreSignals",
     "commonPoints",
     "divergences",
     "framingDifferences",

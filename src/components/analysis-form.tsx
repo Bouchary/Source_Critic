@@ -1,12 +1,16 @@
 ﻿"use client";
 
 import { useMemo, useState } from "react";
-import { Loader2, Sparkles } from "lucide-react";
+import { ArrowLeft, FileText, Loader2, Sparkles } from "lucide-react";
 import { ResultPanel } from "@/components/result-panel";
 import { PdfUpload } from "@/components/pdf-upload";
 import { ModeToggle } from "@/components/mode-toggle";
 import { SourcesPanel } from "@/components/sources-panel";
-import type { AnalysisMode, AnalysisResult, ExternalSourceItem } from "@/lib/schema";
+import type {
+  AnalysisMode,
+  AnalysisResult,
+  ExternalSourceItem,
+} from "@/lib/schema";
 
 interface ApiAnalysisResponse {
   result: AnalysisResult;
@@ -54,13 +58,71 @@ export function AnalysisForm() {
     }
   }
 
+  function resetForNewAnalysis() {
+    setResult(null);
+    setSources([]);
+    setError("");
+    setText("");
+    setTitle("");
+    setAuthor("");
+    setDocumentType("");
+    setPublicationContext("");
+    setMode("internal_only");
+  }
+
+  if (result) {
+    return (
+      <div className="grid gap-6">
+        <section className="rounded-3xl border border-white/10 bg-white/5 p-5 shadow-xl backdrop-blur md:p-6">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div>
+              <h2 className="text-2xl font-semibold tracking-tight">
+                Rapport d’analyse
+              </h2>
+              <p className="mt-2 text-sm leading-6 text-slate-300">
+                Consultez le rapport en plein format, puis revenez à l’édition si nécessaire.
+              </p>
+            </div>
+
+            <div className="flex flex-wrap gap-3" data-no-print>
+              <button
+                type="button"
+                onClick={() => setResult(null)}
+                className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-slate-200 transition hover:bg-white/10"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Retour à l’édition
+              </button>
+
+              <button
+                type="button"
+                onClick={resetForNewAnalysis}
+                className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-slate-950/30 px-4 py-2 text-sm text-slate-200 transition hover:bg-slate-950/50"
+              >
+                <FileText className="h-4 w-4" />
+                Nouvelle analyse
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <section className="rounded-3xl border border-white/10 bg-white/5 p-5 shadow-xl backdrop-blur md:p-6">
+          <div className="grid gap-6">
+            <ResultPanel result={result} />
+            <SourcesPanel sources={sources} />
+          </div>
+        </section>
+      </div>
+    );
+  }
+
   return (
-    <div className="grid gap-6 xl:grid-cols-[1.05fr_1.2fr]">
+    <div className="grid gap-6">
       <section className="rounded-3xl border border-white/10 bg-white/5 p-5 shadow-xl backdrop-blur md:p-6">
         <div className="mb-5">
           <h2 className="text-xl font-semibold tracking-tight">Nouveau document à analyser</h2>
           <p className="mt-2 text-sm leading-6 text-slate-300">
-            Choisissez explicitement le mode d’analyse avant d’envoyer le document.
+            Préparez votre texte ou votre PDF, choisissez le mode, puis lancez l’analyse.
           </p>
         </div>
 
@@ -77,14 +139,14 @@ export function AnalysisForm() {
           </div>
 
           <textarea
-            className="min-h-[260px] rounded-3xl border border-white/10 bg-slate-950/40 px-4 py-4 text-sm leading-7 outline-none"
+            className="min-h-[360px] rounded-3xl border border-white/10 bg-slate-950/40 px-4 py-4 text-sm leading-7 outline-none"
             value={text}
             onChange={(e) => setText(e.target.value)}
             placeholder="Collez ici le texte à analyser..."
           />
 
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="text-xs text-slate-400">{charCount} caractères · minimum recommandé : 500</div>
+            <div className="text-xs text-slate-400">{charCount} caractères - minimum recommandé : 500</div>
             <button
               type="submit"
               disabled={loading}
@@ -123,24 +185,6 @@ export function AnalysisForm() {
         </div>
 
         {error ? <div className="mt-4 rounded-2xl border border-rose-400/20 bg-rose-400/10 px-4 py-3 text-sm text-rose-100">{error}</div> : null}
-      </section>
-
-      <section className="rounded-3xl border border-white/10 bg-white/5 p-5 shadow-xl backdrop-blur md:p-6">
-        {!result ? (
-          <div className="flex h-full min-h-[400px] items-center justify-center rounded-3xl border border-dashed border-white/10 bg-slate-950/20 p-8 text-center">
-            <div className="max-w-md">
-              <h2 className="text-lg font-semibold">Rapport structuré</h2>
-              <p className="mt-2 text-sm leading-6 text-slate-300">
-                Le rapport affichera la traçabilité du propos, les scores de robustesse, les biais possibles et, en mode externe, les sources consultées.
-              </p>
-            </div>
-          </div>
-        ) : (
-          <div className="grid gap-6">
-            <ResultPanel result={result} />
-            <SourcesPanel sources={sources} />
-          </div>
-        )}
       </section>
     </div>
   );

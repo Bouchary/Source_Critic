@@ -1,8 +1,18 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { FileUp, GitCompareArrows, Loader2 } from "lucide-react";
-import type { AnalysisMode, ComparisonResult, ExternalSourceItem } from "@/lib/schema";
+import {
+  ArrowLeft,
+  FileText,
+  FileUp,
+  GitCompareArrows,
+  Loader2,
+} from "lucide-react";
+import type {
+  AnalysisMode,
+  ComparisonResult,
+  ExternalSourceItem,
+} from "@/lib/schema";
 import { ComparisonResultPanel } from "@/components/comparison-result-panel";
 import { ModeToggle } from "@/components/mode-toggle";
 import { SourcesPanel } from "@/components/sources-panel";
@@ -116,8 +126,75 @@ export function ComparisonForm() {
     }
   }
 
+  function resetForNewComparison() {
+    setMode("internal_only");
+    setTitleA("");
+    setAuthorA("");
+    setDocumentTypeA("");
+    setPublicationContextA("");
+    setTextA("");
+    setFileA(null);
+
+    setTitleB("");
+    setAuthorB("");
+    setDocumentTypeB("");
+    setPublicationContextB("");
+    setTextB("");
+    setFileB(null);
+
+    setResult(null);
+    setSources([]);
+    setError("");
+  }
+
+  if (result) {
+    return (
+      <div className="grid gap-6">
+        <section className="rounded-3xl border border-white/10 bg-white/5 p-5 shadow-xl backdrop-blur md:p-6">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div>
+              <h2 className="text-2xl font-semibold tracking-tight">
+                Rapport comparatif
+              </h2>
+              <p className="mt-2 text-sm leading-6 text-slate-300">
+                Consultez la comparaison en plein format, puis revenez à l’édition si nécessaire.
+              </p>
+            </div>
+
+            <div className="flex flex-wrap gap-3" data-no-print>
+              <button
+                type="button"
+                onClick={() => setResult(null)}
+                className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-slate-200 transition hover:bg-white/10"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Retour à l’édition
+              </button>
+
+              <button
+                type="button"
+                onClick={resetForNewComparison}
+                className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-slate-950/30 px-4 py-2 text-sm text-slate-200 transition hover:bg-slate-950/50"
+              >
+                <FileText className="h-4 w-4" />
+                Nouvelle comparaison
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <section className="rounded-3xl border border-white/10 bg-white/5 p-5 shadow-xl backdrop-blur md:p-6">
+          <div className="grid gap-6">
+            <ComparisonResultPanel result={result} />
+            <SourcesPanel sources={sources} />
+          </div>
+        </section>
+      </div>
+    );
+  }
+
   return (
-    <div className="grid gap-6 xl:grid-cols-[1.05fr_1.2fr]">
+    <div className="grid gap-6">
       <section className="rounded-3xl border border-white/10 bg-white/5 p-5 shadow-xl backdrop-blur md:p-6">
         <div className="mb-6">
           <ModeToggle value={mode} onChange={setMode} />
@@ -131,7 +208,7 @@ export function ComparisonForm() {
               <input className="rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-sm outline-none" value={authorA} onChange={(e) => setAuthorA(e.target.value)} placeholder="Auteur" />
               <input className="rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-sm outline-none" value={documentTypeA} onChange={(e) => setDocumentTypeA(e.target.value)} placeholder="Type de document" />
               <input className="rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-sm outline-none" value={publicationContextA} onChange={(e) => setPublicationContextA(e.target.value)} placeholder="Contexte de publication" />
-              <textarea className="min-h-[220px] rounded-3xl border border-white/10 bg-slate-950/40 px-4 py-4 text-sm leading-7 outline-none" value={textA} onChange={(e) => setTextA(e.target.value)} placeholder="Texte A..." />
+              <textarea className="min-h-[320px] rounded-3xl border border-white/10 bg-slate-950/40 px-4 py-4 text-sm leading-7 outline-none" value={textA} onChange={(e) => setTextA(e.target.value)} placeholder="Texte A..." />
               <div className="text-xs text-slate-400">{countA} caractères</div>
               <input type="file" accept="application/pdf" onChange={(e) => setFileA(e.target.files?.[0] || null)} className="block w-full text-sm text-slate-300 file:mr-4 file:rounded-xl file:border-0 file:bg-white file:px-4 file:py-2 file:text-sm file:font-medium file:text-slate-950" />
             </div>
@@ -142,7 +219,7 @@ export function ComparisonForm() {
               <input className="rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-sm outline-none" value={authorB} onChange={(e) => setAuthorB(e.target.value)} placeholder="Auteur" />
               <input className="rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-sm outline-none" value={documentTypeB} onChange={(e) => setDocumentTypeB(e.target.value)} placeholder="Type de document" />
               <input className="rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-sm outline-none" value={publicationContextB} onChange={(e) => setPublicationContextB(e.target.value)} placeholder="Contexte de publication" />
-              <textarea className="min-h-[220px] rounded-3xl border border-white/10 bg-slate-950/40 px-4 py-4 text-sm leading-7 outline-none" value={textB} onChange={(e) => setTextB(e.target.value)} placeholder="Texte B..." />
+              <textarea className="min-h-[320px] rounded-3xl border border-white/10 bg-slate-950/40 px-4 py-4 text-sm leading-7 outline-none" value={textB} onChange={(e) => setTextB(e.target.value)} placeholder="Texte B..." />
               <div className="text-xs text-slate-400">{countB} caractères</div>
               <input type="file" accept="application/pdf" onChange={(e) => setFileB(e.target.files?.[0] || null)} className="block w-full text-sm text-slate-300 file:mr-4 file:rounded-xl file:border-0 file:bg-white file:px-4 file:py-2 file:text-sm file:font-medium file:text-slate-950" />
             </div>
@@ -161,21 +238,6 @@ export function ComparisonForm() {
 
           {error ? <div className="rounded-2xl border border-rose-400/20 bg-rose-400/10 px-4 py-3 text-sm text-rose-100">{error}</div> : null}
         </form>
-      </section>
-
-      <section className="rounded-3xl border border-white/10 bg-white/5 p-5 shadow-xl backdrop-blur md:p-6">
-        {!result ? (
-          <div className="flex h-full min-h-[400px] items-center justify-center rounded-3xl border border-dashed border-white/10 bg-slate-950/20 p-8 text-center">
-            <div className="max-w-md">
-              <h2 className="text-lg font-semibold">Rapport comparatif</h2>
-            </div>
-          </div>
-        ) : (
-          <div className="grid gap-6">
-            <ComparisonResultPanel result={result} />
-            <SourcesPanel sources={sources} />
-          </div>
-        )}
       </section>
     </div>
   );

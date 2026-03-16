@@ -97,7 +97,7 @@ export async function POST(req: Request) {
     const external = payload.mode === "external_research";
 
     let result: AnalysisResult;
-    let sources: ExternalSourceItem[] = []; 
+    let sources: ExternalSourceItem[] = [];
 
     if (external) {
       const externalResponse =

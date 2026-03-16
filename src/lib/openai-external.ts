@@ -67,6 +67,7 @@ export async function createExternalStructuredResponse<T>(params: {
       instructions: params.instructions,
       input: params.input,
       tools: [{ type: "web_search_preview" }],
+      tool_choice: "required",
       include: ["web_search_call.action.sources"],
       text: {
         format: {
