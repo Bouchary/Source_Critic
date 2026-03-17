@@ -1,4 +1,9 @@
-import { Prisma, EntryKind, AnalysisMode as PrismaAnalysisMode, InputMode as PrismaInputMode } from "@prisma/client";
+import {
+  Prisma,
+  EntryKind,
+  AnalysisMode as PrismaAnalysisMode,
+  InputMode as PrismaInputMode,
+} from "@prisma/client";
 import { prisma } from "@/lib/db";
 import type {
   AnalysisMode,
@@ -119,6 +124,7 @@ function mapDbEntry(entry: {
 }
 
 export async function saveAnalysisToDb(params: {
+  userId?: string | null;
   mode: AnalysisMode;
   inputMode: "text" | "pdf";
   title: string;
@@ -132,6 +138,7 @@ export async function saveAnalysisToDb(params: {
 }) {
   return prisma.historyEntry.create({
     data: {
+      userId: params.userId ?? null,
       kind: appKindToPrisma("analysis"),
       mode: appModeToPrisma(params.mode),
       inputMode: appInputModeToPrisma(params.inputMode),
@@ -148,6 +155,7 @@ export async function saveAnalysisToDb(params: {
 }
 
 export async function saveComparisonToDb(params: {
+  userId?: string | null;
   mode: AnalysisMode;
   inputMode: AppInputMode;
   documentATitle: string;
@@ -161,6 +169,7 @@ export async function saveComparisonToDb(params: {
 }) {
   return prisma.historyEntry.create({
     data: {
+      userId: params.userId ?? null,
       kind: appKindToPrisma("comparison"),
       mode: appModeToPrisma(params.mode),
       inputMode: appInputModeToPrisma(params.inputMode),
@@ -176,23 +185,29 @@ export async function saveComparisonToDb(params: {
   });
 }
 
-export async function getHistoryFromDb(): Promise<HistoryEntry[]> {
+export async function getHistoryFromDb(userId?: string | null): Promise<HistoryEntry[]> {
   const rows = await prisma.historyEntry.findMany({
+    where: userId ? { userId } : undefined,
     orderBy: { createdAt: "desc" },
   });
 
   return rows.map(mapDbEntry);
 }
 
-export async function getHistoryEntryById(id: string): Promise<HistoryEntry | null> {
-  const row = await prisma.historyEntry.findUnique({
-    where: { id },
+export async function getHistoryEntryById(id: string, userId?: string | null): Promise<HistoryEntry | null> {
+  const row = await prisma.historyEntry.findFirst({
+    where: {
+      id,
+      ...(userId ? { userId } : {}),
+    },
   });
 
   if (!row) return null;
   return mapDbEntry(row);
 }
 
-export async function clearHistoryInDb() {
-  await prisma.historyEntry.deleteMany();
+export async function clearHistoryInDb(userId?: string | null) {
+  await prisma.historyEntry.deleteMany({
+    where: userId ? { userId } : undefined,
+  });
 }

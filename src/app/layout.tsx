@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { SiteHeader } from "@/components/site-header";
+import { AuthSessionProvider } from "@/components/auth-session-provider";
 
 export const metadata: Metadata = {
   title: "Source Critic",
@@ -16,10 +17,12 @@ export default function RootLayout({
   return (
     <html lang="fr">
       <body className="min-h-screen bg-slate-950 text-slate-100">
-        <div className="min-h-screen">
-          <SiteHeader />
-          {children}
-        </div>
+        <AuthSessionProvider>
+          <div className="min-h-screen">
+            <SiteHeader />
+            {children}
+          </div>
+        </AuthSessionProvider>
       </body>
     </html>
   );

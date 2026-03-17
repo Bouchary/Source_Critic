@@ -17,12 +17,16 @@ import {
   buildDeterministicComparisonResult,
   type ComparisonModelOutput,
 } from "@/lib/compare-scoring";
+import { auth } from "@/auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
   try {
+    const session = await auth();
+    const userId = session?.user?.id ?? null;
+
     const body = await req.json();
     const parsed = comparisonInputSchema.safeParse(body);
 
@@ -84,6 +88,7 @@ export async function POST(req: Request) {
     }
 
     await saveComparisonToDb({
+      userId,
       mode: payload.mode,
       inputMode: "text",
       documentATitle: payload.documentA.title || "Document A",

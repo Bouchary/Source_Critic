@@ -1,6 +1,8 @@
+import Link from "next/link";
 import { LayoutPanelTop, ShieldCheck } from "lucide-react";
 import { HomeNewsSection } from "@/components/home-news-section";
 import { getHomepageNews } from "@/lib/home-news";
+import { getOptionalUser } from "@/lib/auth-helpers";
 
 function FeatureCard({
   title,
@@ -18,7 +20,10 @@ function FeatureCard({
 }
 
 export default async function HomePage() {
-  const { france, world } = await getHomepageNews();
+  const [{ france, world }, user] = await Promise.all([
+    getHomepageNews(),
+    getOptionalUser(),
+  ]);
 
   return (
     <main className="min-h-screen bg-transparent px-4 py-8 md:px-8">
@@ -37,9 +42,13 @@ export default async function HomePage() {
                   </h1>
                   <p className="mt-3 text-sm leading-7 text-slate-300 md:text-base">
                     Plateforme d’analyse critique des sources, de comparaison argumentée,
-                    de traçabilité et de replay. La page d’accueil sert ici d’entrée
-                    produit et de point de veille, tandis que les pages métier restent
-                    dédiées au travail.
+                    de traçabilité et de replay. La page d’accueil sert d’entrée produit
+                    et de point de veille, tandis que les pages métier restent dédiées au travail.
+                  </p>
+                  <p className="mt-3 text-sm text-slate-400">
+                    {user
+                      ? `Connecté en tant que ${user.email ?? user.name ?? "utilisateur"}.`
+                      : "Connectez-vous pour enregistrer vos runs dans votre espace personnel."}
                   </p>
                 </div>
               </div>
@@ -58,6 +67,23 @@ export default async function HomePage() {
                   description="Relire un run sauvegardé sans relancer le moteur ni perdre son contexte."
                 />
               </div>
+
+              {!user ? (
+                <div className="mt-6 flex flex-wrap gap-3">
+                  <Link
+                    href="/login"
+                    className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-slate-800 px-5 py-3 text-sm font-medium text-slate-100 transition hover:bg-slate-700"
+                  >
+                    Se connecter
+                  </Link>
+                  <Link
+                    href="/signup"
+                    className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-slate-800 px-5 py-3 text-sm font-medium text-slate-100 transition hover:bg-slate-700"
+                  >
+                    Créer un compte
+                  </Link>
+                </div>
+              ) : null}
             </div>
 
             <div className="rounded-3xl border border-white/10 bg-slate-950/20 p-5">

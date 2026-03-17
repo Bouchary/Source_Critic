@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Clock3, FileSearch2, GitCompareArrows, History } from "lucide-react";
 import { getHistoryFromDb } from "@/lib/history-db";
+import { requireUser } from "@/lib/auth-helpers";
 
 function formatDate(value: string) {
   try {
@@ -14,7 +15,8 @@ function formatDate(value: string) {
 }
 
 export default async function HistoryPage() {
-  const entries = await getHistoryFromDb();
+  const user = await requireUser();
+  const entries = await getHistoryFromDb(user.id);
 
   return (
     <main className="min-h-screen bg-transparent px-4 py-8 md:px-8">
@@ -27,10 +29,10 @@ export default async function HistoryPage() {
 
             <div>
               <h1 className="text-2xl font-semibold tracking-tight text-white">
-                Historique des runs
+                Historique de vos runs
               </h1>
               <p className="mt-2 text-sm leading-6 text-slate-300">
-                Consultez les analyses et comparaisons déjà enregistrées, puis
+                Consultez vos analyses et comparaisons enregistrées, puis
                 rejouez-les sans relancer le moteur.
               </p>
             </div>
@@ -40,7 +42,7 @@ export default async function HistoryPage() {
         <section className="rounded-3xl border border-white/10 bg-white/5 p-5 shadow-xl backdrop-blur md:p-6">
           {!entries.length ? (
             <div className="rounded-2xl border border-dashed border-white/10 bg-slate-950/20 p-6 text-sm leading-6 text-slate-300">
-              Aucun run enregistré pour le moment.
+              Aucun run enregistré pour votre compte pour le moment.
             </div>
           ) : (
             <div className="grid gap-4">

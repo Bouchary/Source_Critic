@@ -17,12 +17,16 @@ import {
   buildDeterministicAnalysisResult,
   type AnalysisModelOutput,
 } from "@/lib/analyze-scoring";
+import { auth } from "@/auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
   try {
+    const session = await auth();
+    const userId = session?.user?.id ?? null;
+
     const body = await req.json();
     const parsed = analysisInputSchema.safeParse(body);
 
@@ -81,6 +85,7 @@ export async function POST(req: Request) {
     }
 
     await saveAnalysisToDb({
+      userId,
       mode: payload.mode,
       inputMode: "text",
       title: payload.title,

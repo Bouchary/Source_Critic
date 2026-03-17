@@ -1,7 +1,10 @@
 import { FileSearch2 } from "lucide-react";
 import { AnalysisForm } from "@/components/analysis-form";
+import { requireUser } from "@/lib/auth-helpers";
 
-export default function AnalyzePage() {
+export default async function AnalyzePage() {
+  await requireUser();
+
   return (
     <main className="min-h-screen bg-transparent px-4 py-8 md:px-8">
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">

@@ -8,6 +8,7 @@ import {
   Settings,
   UserCircle2,
 } from "lucide-react";
+import { requireUser } from "@/lib/auth-helpers";
 
 function DashboardCard({
   href,
@@ -42,7 +43,9 @@ function DashboardCard({
   );
 }
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
+  await requireUser();
+
   return (
     <main className="min-h-screen bg-transparent px-4 py-8 md:px-8">
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
@@ -71,28 +74,24 @@ export default function DashboardPage() {
             description="Lancer une analyse simple à partir d’un texte ou d’un PDF."
             icon={<FileSearch2 className="h-5 w-5 text-slate-200" />}
           />
-
           <DashboardCard
             href="/compare"
             title="Comparer"
             description="Comparer deux textes ou deux PDF avec un rapport structuré."
             icon={<GitCompareArrows className="h-5 w-5 text-slate-200" />}
           />
-
           <DashboardCard
             href="/history"
             title="Historique"
-            description="Accéder aux runs sauvegardés et rejouer un résultat figé."
+            description="Accéder à vos runs sauvegardés et rejouer un résultat figé."
             icon={<History className="h-5 w-5 text-slate-200" />}
           />
-
           <DashboardCard
             href="/profile"
             title="Profil"
-            description="Préparer l’espace utilisateur et les métadonnées de compte."
+            description="Gérer votre compte utilisateur."
             icon={<UserCircle2 className="h-5 w-5 text-slate-200" />}
           />
-
           <DashboardCard
             href="/settings"
             title="Paramètres"

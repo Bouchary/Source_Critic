@@ -1,4 +1,5 @@
 import { Bell, Database, Settings, SlidersHorizontal } from "lucide-react";
+import { requireUser } from "@/lib/auth-helpers";
 
 function SettingBlock({
   title,
@@ -18,7 +19,9 @@ function SettingBlock({
   );
 }
 
-export default function SettingsPage() {
+export default async function SettingsPage() {
+  await requireUser();
+
   return (
     <main className="min-h-screen bg-transparent px-4 py-8 md:px-8">
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
@@ -33,8 +36,7 @@ export default function SettingsPage() {
                 Paramètres
               </h1>
               <p className="mt-2 text-sm leading-6 text-slate-300">
-                Base des futurs réglages produit : moteur, sources, comportements
-                par défaut et préférences utilisateur.
+                Base des futurs réglages produit et utilisateur.
               </p>
             </div>
           </div>
@@ -79,7 +81,7 @@ export default function SettingsPage() {
               </h2>
             </div>
             <p className="text-sm leading-6 text-slate-300">
-              Les runs sont déjà stockés. Les politiques de conservation viendront ensuite.
+              Vos runs sont désormais rattachés à votre compte utilisateur.
             </p>
           </div>
 

@@ -1,4 +1,5 @@
 import { BadgeInfo, Mail, ShieldCheck, UserCircle2 } from "lucide-react";
+import { requireUser } from "@/lib/auth-helpers";
 
 function InfoCard({
   title,
@@ -18,7 +19,9 @@ function InfoCard({
   );
 }
 
-export default function ProfilePage() {
+export default async function ProfilePage() {
+  const user = await requireUser();
+
   return (
     <main className="min-h-screen bg-transparent px-4 py-8 md:px-8">
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
@@ -33,8 +36,7 @@ export default function ProfilePage() {
                 Profil
               </h1>
               <p className="mt-2 text-sm leading-6 text-slate-300">
-                Écran de préparation du futur espace utilisateur. Cette version
-                pose le cadre visuel sans introduire encore l’authentification.
+                Votre espace personnel Source Critic.
               </p>
             </div>
           </div>
@@ -43,18 +45,18 @@ export default function ProfilePage() {
         <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           <InfoCard
             title="Identité"
-            value="Compte local non activé"
-            helper="Le système d’authentification réelle sera ajouté au release suivant."
+            value={user.name || "Nom non renseigné"}
+            helper="Le nom affiché de votre compte."
           />
           <InfoCard
             title="Email"
-            value="Non renseigné"
-            helper="Les informations de compte seront reliées à la future base utilisateur."
+            value={user.email || "Email non renseigné"}
+            helper="Adresse utilisée pour la connexion."
           />
           <InfoCard
             title="Rôle"
             value="Utilisateur standard"
-            helper="La gestion des rôles et espaces de travail viendra plus tard."
+            helper="La gestion des rôles avancés viendra plus tard."
           />
         </section>
 
@@ -63,10 +65,10 @@ export default function ProfilePage() {
             <div className="rounded-2xl border border-white/10 bg-slate-950/20 p-4">
               <div className="mb-3 flex items-center gap-2">
                 <Mail className="h-4 w-4 text-slate-200" />
-                <h2 className="text-sm font-semibold text-white">Email et accès</h2>
+                <h2 className="text-sm font-semibold text-white">Compte</h2>
               </div>
               <p className="text-sm leading-6 text-slate-300">
-                À brancher sur le vrai système de connexion.
+                Espace prêt pour les futures modifications de profil.
               </p>
             </div>
 
@@ -76,7 +78,7 @@ export default function ProfilePage() {
                 <h2 className="text-sm font-semibold text-white">Sécurité</h2>
               </div>
               <p className="text-sm leading-6 text-slate-300">
-                Cookies, sessions et protection des routes au release suivant.
+                Sessions réelles actives via Auth.js et base utilisateur Prisma.
               </p>
             </div>
 
@@ -86,7 +88,7 @@ export default function ProfilePage() {
                 <h2 className="text-sm font-semibold text-white">Préférences</h2>
               </div>
               <p className="text-sm leading-6 text-slate-300">
-                Les préférences personnelles seront centralisées avec les paramètres.
+                Les préférences utilisateur détaillées viendront au release suivant.
               </p>
             </div>
           </div>

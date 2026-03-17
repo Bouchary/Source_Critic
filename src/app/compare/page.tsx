@@ -1,7 +1,10 @@
 import { GitCompareArrows } from "lucide-react";
 import { ComparisonForm } from "@/components/comparison-form";
+import { requireUser } from "@/lib/auth-helpers";
 
-export default function ComparePage() {
+export default async function ComparePage() {
+  await requireUser();
+
   return (
     <main className="min-h-screen bg-transparent px-4 py-8 md:px-8">
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
