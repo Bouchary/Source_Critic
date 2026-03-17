@@ -33,7 +33,7 @@ export default async function ReplayPage({ params }: ReplayPageProps) {
     <main className="min-h-screen bg-transparent px-4 py-8 md:px-8">
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
         <section className="rounded-3xl border border-white/10 bg-white/5 p-5 shadow-xl backdrop-blur md:p-6">
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div className="flex flex-col gap-5">
             <div className="flex items-start gap-3">
               <div className="rounded-2xl border border-white/10 bg-slate-950/30 p-3">
                 <History className="h-5 w-5 text-slate-200" />
@@ -65,7 +65,7 @@ export default async function ReplayPage({ params }: ReplayPageProps) {
               </Link>
 
               <Link
-                href={entry.kind === "analysis" ? "/" : "/compare"}
+                href={entry.kind === "analysis" ? "/analyze" : "/compare"}
                 className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-slate-950/30 px-4 py-2 text-sm text-slate-200 transition hover:bg-slate-950/50"
               >
                 <RefreshCcw className="h-4 w-4" />

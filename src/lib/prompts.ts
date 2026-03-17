@@ -14,10 +14,24 @@ RÈGLES
 - Si une information manque, indique explicitement qu’elle est non déterminable.
 - Ne produis jamais de verdict de vérité absolue.
 - Ne dis jamais qui ment.
+- Tu ne calcules pas des notes libres de 0 à 100.
+- Tu ne notes pas :
+  1. la traçabilité,
+  2. la robustesse factuelle,
+  3. la transparence des sources.
+- Ces trois dimensions seront calculées côté application à partir d’indices textuels observables.
+- À la place, tu fournis seulement des signaux bornés de 0 à 4 pour :
+  1. charge interprétative,
+  2. gestion de la contradiction,
+  3. risque de biais.
+- Échelle :
+  0 = très faible
+  1 = faible
+  2 = intermédiaire
+  3 = élevé
+  4 = très élevé
 - Distingue strictement le texte, l’inférence prudente et l’inconnu.
-- Tous les scores doivent être justifiés par le texte fourni.
 - Chaque biais signalé doit être relié à un extrait ou à un trait textuel observable.
-- Si le texte provient d’un PDF extrait, ne suppose pas que toute la structure originale est conservée.
 
 FORMAT
 Réponds uniquement en JSON valide conforme au schéma attendu.
@@ -39,8 +53,22 @@ RÈGLES
   3. ce qui est non déterminable.
 - Ne produis jamais de verdict de vérité absolue.
 - Ne dis jamais qui ment.
-- Ne masque jamais les incertitudes.
-- Tous les scores doivent être justifiés.
+- Tu ne calcules pas des notes libres de 0 à 100.
+- Tu ne notes pas :
+  1. la traçabilité,
+  2. la robustesse factuelle,
+  3. la transparence des sources.
+- Ces trois dimensions seront calculées côté application à partir d’indices textuels observables.
+- À la place, tu fournis seulement des signaux bornés de 0 à 4 pour :
+  1. charge interprétative,
+  2. gestion de la contradiction,
+  3. risque de biais.
+- Échelle :
+  0 = très faible
+  1 = faible
+  2 = intermédiaire
+  3 = élevé
+  4 = très élevé
 - Si les sources ne suffisent pas, dis-le explicitement.
 
 FORMAT
@@ -74,6 +102,9 @@ Consignes :
 - documentProfile.mode doit être "${input.mode}".
 - executiveSummary : 120 à 180 mots.
 - methodologyNotice : 60 à 100 mots.
+- scoreSignals.interpretiveLoad : niveau de charge interprétative.
+- scoreSignals.contradictionHandling : capacité du texte à prendre en charge ou non la contradiction.
+- scoreSignals.biasRisk : niveau global de risque de biais.
 - observableElements : uniquement des éléments déductibles du texte ou des métadonnées.
 - nonInferableElements : ce qui ne peut pas être établi sans sources externes.
 - keyClaims : entre 6 et 10 items.
@@ -84,6 +115,22 @@ Consignes :
 - Les extraits doivent être courts, fidèles et tirés du texte.
 `;
 }
+
+const signalSchema = {
+  type: "object",
+  additionalProperties: false,
+  properties: {
+    level: {
+      type: "integer",
+      minimum: 0,
+      maximum: 4,
+    },
+    rationale: {
+      type: "string",
+    },
+  },
+  required: ["level", "rationale"],
+} as const;
 
 export const ANALYSIS_JSON_SCHEMA = {
   type: "object",
@@ -111,79 +158,15 @@ export const ANALYSIS_JSON_SCHEMA = {
     },
     executiveSummary: { type: "string" },
     methodologyNotice: { type: "string" },
-    scores: {
+    scoreSignals: {
       type: "object",
       additionalProperties: false,
       properties: {
-        traceability: {
-          type: "object",
-          additionalProperties: false,
-          properties: {
-            score: { type: "number" },
-            label: { type: "string" },
-            rationale: { type: "string" },
-          },
-          required: ["score", "label", "rationale"],
-        },
-        factualRobustness: {
-          type: "object",
-          additionalProperties: false,
-          properties: {
-            score: { type: "number" },
-            label: { type: "string" },
-            rationale: { type: "string" },
-          },
-          required: ["score", "label", "rationale"],
-        },
-        interpretiveLoad: {
-          type: "object",
-          additionalProperties: false,
-          properties: {
-            score: { type: "number" },
-            label: { type: "string" },
-            rationale: { type: "string" },
-          },
-          required: ["score", "label", "rationale"],
-        },
-        contradictionHandling: {
-          type: "object",
-          additionalProperties: false,
-          properties: {
-            score: { type: "number" },
-            label: { type: "string" },
-            rationale: { type: "string" },
-          },
-          required: ["score", "label", "rationale"],
-        },
-        sourceTransparency: {
-          type: "object",
-          additionalProperties: false,
-          properties: {
-            score: { type: "number" },
-            label: { type: "string" },
-            rationale: { type: "string" },
-          },
-          required: ["score", "label", "rationale"],
-        },
-        biasRisk: {
-          type: "object",
-          additionalProperties: false,
-          properties: {
-            score: { type: "number" },
-            label: { type: "string" },
-            rationale: { type: "string" },
-          },
-          required: ["score", "label", "rationale"],
-        },
+        interpretiveLoad: signalSchema,
+        contradictionHandling: signalSchema,
+        biasRisk: signalSchema,
       },
-      required: [
-        "traceability",
-        "factualRobustness",
-        "interpretiveLoad",
-        "contradictionHandling",
-        "sourceTransparency",
-        "biasRisk",
-      ],
+      required: ["interpretiveLoad", "contradictionHandling", "biasRisk"],
     },
     authorPositioning: {
       type: "object",
@@ -246,7 +229,7 @@ export const ANALYSIS_JSON_SCHEMA = {
     "documentProfile",
     "executiveSummary",
     "methodologyNotice",
-    "scores",
+    "scoreSignals",
     "authorPositioning",
     "keyClaims",
     "biasMap",

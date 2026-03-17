@@ -1,5 +1,4 @@
 ﻿import { NextResponse } from "next/server";
-import { openai } from "@/lib/openai";
 import {
   analysisInputSchema,
   type AnalysisResult,
@@ -11,44 +10,16 @@ import {
   EXTERNAL_SYSTEM_PROMPT,
   buildUserPrompt,
 } from "@/lib/prompts";
-import { clampScore } from "@/lib/utils";
 import { saveAnalysisToDb } from "@/lib/history-db";
 import { createExternalStructuredResponse } from "@/lib/openai-external";
+import { openai } from "@/lib/openai";
+import {
+  buildDeterministicAnalysisResult,
+  type AnalysisModelOutput,
+} from "@/lib/analyze-scoring";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-
-function normalizeScores(result: AnalysisResult): AnalysisResult {
-  return {
-    ...result,
-    scores: {
-      traceability: {
-        ...result.scores.traceability,
-        score: clampScore(result.scores.traceability.score),
-      },
-      factualRobustness: {
-        ...result.scores.factualRobustness,
-        score: clampScore(result.scores.factualRobustness.score),
-      },
-      interpretiveLoad: {
-        ...result.scores.interpretiveLoad,
-        score: clampScore(result.scores.interpretiveLoad.score),
-      },
-      contradictionHandling: {
-        ...result.scores.contradictionHandling,
-        score: clampScore(result.scores.contradictionHandling.score),
-      },
-      sourceTransparency: {
-        ...result.scores.sourceTransparency,
-        score: clampScore(result.scores.sourceTransparency.score),
-      },
-      biasRisk: {
-        ...result.scores.biasRisk,
-        score: clampScore(result.scores.biasRisk.score),
-      },
-    },
-  };
-}
 
 export async function POST(req: Request) {
   try {
@@ -70,14 +41,14 @@ export async function POST(req: Request) {
 
     if (external) {
       const externalResponse =
-        await createExternalStructuredResponse<AnalysisResult>({
+        await createExternalStructuredResponse<AnalysisModelOutput>({
           instructions: EXTERNAL_SYSTEM_PROMPT,
           input: buildUserPrompt(payload),
           schema: ANALYSIS_JSON_SCHEMA,
-          name: "source_critic_analysis_v31",
+          name: "source_critic_analysis_v37",
         });
 
-      result = normalizeScores(externalResponse.result);
+      result = buildDeterministicAnalysisResult(externalResponse.result, payload);
       sources = externalResponse.sources;
     } else {
       const response = await openai.responses.create({
@@ -87,7 +58,7 @@ export async function POST(req: Request) {
         text: {
           format: {
             type: "json_schema",
-            name: "source_critic_analysis_v31_internal",
+            name: "source_critic_analysis_v37_internal",
             schema: ANALYSIS_JSON_SCHEMA,
             strict: true,
           },
@@ -103,7 +74,10 @@ export async function POST(req: Request) {
         );
       }
 
-      result = normalizeScores(JSON.parse(raw) as AnalysisResult);
+      result = buildDeterministicAnalysisResult(
+        JSON.parse(raw) as AnalysisModelOutput,
+        payload,
+      );
     }
 
     await saveAnalysisToDb({
