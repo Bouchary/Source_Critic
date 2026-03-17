@@ -1,11 +1,24 @@
-import type { AnalysisResult, ComparisonResult, ExternalSourceItem, AnalysisMode } from "@/lib/schema";
+import type {
+  AnalysisMode,
+  AnalysisResult,
+  ComparisonResult,
+  ExternalSourceItem,
+} from "@/lib/schema";
 
-export interface StoredAnalysis {
+export type HistoryKind = "analysis" | "comparison";
+export type HistoryInputMode = "text" | "pdf" | "mixed";
+
+interface HistoryEntryBase {
   id: string;
-  kind: "analysis";
+  kind: HistoryKind;
   mode: AnalysisMode;
+  inputMode: HistoryInputMode;
   createdAt: string;
-  inputMode: "text" | "pdf";
+  sources: ExternalSourceItem[];
+}
+
+export interface AnalysisHistoryEntry extends HistoryEntryBase {
+  kind: "analysis";
   title: string;
   author: string;
   documentType: string;
@@ -13,15 +26,10 @@ export interface StoredAnalysis {
   sourceFileName?: string;
   rawText: string;
   result: AnalysisResult;
-  sources: ExternalSourceItem[];
 }
 
-export interface StoredComparison {
-  id: string;
+export interface ComparisonHistoryEntry extends HistoryEntryBase {
   kind: "comparison";
-  mode: AnalysisMode;
-  createdAt: string;
-  inputMode: "text" | "pdf" | "mixed";
   documentATitle: string;
   documentBTitle: string;
   rawTextA: string;
@@ -29,7 +37,6 @@ export interface StoredComparison {
   sourceFileNameA?: string;
   sourceFileNameB?: string;
   result: ComparisonResult;
-  sources: ExternalSourceItem[];
 }
 
-export type StoredHistoryEntry = StoredAnalysis | StoredComparison;
+export type HistoryEntry = AnalysisHistoryEntry | ComparisonHistoryEntry;

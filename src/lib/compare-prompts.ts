@@ -15,18 +15,26 @@ RÈGLES
 - Ne produis jamais de verdict de vérité absolue.
 - Ne dis jamais qui ment.
 - Tu ne calcules pas des notes libres de 0 à 100.
-- À la place, tu fournis des signaux bornés de 0 à 4 selon l’échelle suivante :
-  0 = très faible / très éloigné
+- Tu ne notes pas la temporalité.
+- Tu ne notes pas l’étayage.
+- Tu ne notes pas le cadrage.
+- Ces trois dimensions seront calculées côté application.
+- À la place, tu fournis seulement des signaux bornés de 0 à 4 pour :
+  1. recouvrement thématique,
+  2. conflit de thèse,
+  3. distance de genre/finalité.
+- Échelle :
+  0 = très faible / très proche
   1 = faible
   2 = intermédiaire
   3 = élevé
-  4 = très élevé / très proche
+  4 = très élevé / très éloigné
 - Chaque signal doit être justifié très brièvement.
 - Distingue strictement :
   1. convergences observables,
   2. divergences observables,
-  3. différences de cadrage,
-  4. asymétries d’étayage,
+  3. différences de cadrage formulées qualitativement,
+  4. différences d’étayage formulées qualitativement,
   5. angles morts,
   6. limites de comparabilité.
 
@@ -48,12 +56,20 @@ RÈGLES
 - Ne produis jamais de verdict de vérité absolue.
 - Ne dis jamais qui ment.
 - Tu ne calcules pas des notes libres de 0 à 100.
-- À la place, tu fournis des signaux bornés de 0 à 4 selon l’échelle suivante :
-  0 = très faible / très éloigné
+- Tu ne notes pas la temporalité.
+- Tu ne notes pas l’étayage.
+- Tu ne notes pas le cadrage.
+- Ces trois dimensions seront calculées côté application.
+- À la place, tu fournis seulement des signaux bornés de 0 à 4 pour :
+  1. recouvrement thématique,
+  2. conflit de thèse,
+  3. distance de genre/finalité.
+- Échelle :
+  0 = très faible / très proche
   1 = faible
   2 = intermédiaire
   3 = élevé
-  4 = très élevé / très proche
+  4 = très élevé / très éloigné
 - Chaque signal doit être justifié très brièvement.
 - Si les sources externes ne suffisent pas, dis-le explicitement.
 
@@ -100,15 +116,12 @@ Consignes :
 - executiveSummary : 140 à 220 mots.
 - methodologyNotice : 70 à 120 mots.
 - scoreSignals.topicOverlap : degré de recouvrement thématique.
-- scoreSignals.temporalDistance : distance temporelle entre les objets traités.
-- scoreSignals.framingDistance : écart de cadrage.
 - scoreSignals.thesisConflict : degré de conflit entre les thèses / conclusions.
-- scoreSignals.evidenceAsymmetry : asymétrie d’étayage et de profondeur probatoire.
 - scoreSignals.genreDistance : distance de genre, finalité et public visé.
 - commonPoints : 4 à 8 items.
 - divergences : 4 à 8 items.
-- framingDifferences : 4 à 8 items.
-- supportDifferences : 4 à 8 items.
+- framingDifferences : 4 à 8 items, qualitatives uniquement.
+- supportDifferences : 4 à 8 items, qualitatives uniquement.
 - blindSpots.documentA : 3 à 6 items.
 - blindSpots.documentB : 3 à 6 items.
 - caveats : 3 à 6 items.
@@ -154,20 +167,10 @@ export const COMPARISON_JSON_SCHEMA = {
       additionalProperties: false,
       properties: {
         topicOverlap: signalSchema,
-        temporalDistance: signalSchema,
-        framingDistance: signalSchema,
         thesisConflict: signalSchema,
-        evidenceAsymmetry: signalSchema,
         genreDistance: signalSchema,
       },
-      required: [
-        "topicOverlap",
-        "temporalDistance",
-        "framingDistance",
-        "thesisConflict",
-        "evidenceAsymmetry",
-        "genreDistance",
-      ],
+      required: ["topicOverlap", "thesisConflict", "genreDistance"],
     },
     commonPoints: {
       type: "array",

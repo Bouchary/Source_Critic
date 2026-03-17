@@ -103,10 +103,13 @@ export async function POST(req: Request) {
           instructions: COMPARE_EXTERNAL_SYSTEM_PROMPT,
           input: buildCompareUserPrompt(payload),
           schema: COMPARISON_JSON_SCHEMA,
-          name: "source_critic_comparison_pdf_v33",
+          name: "source_critic_comparison_pdf_v35",
         });
 
-      result = buildDeterministicComparisonResult(externalResponse.result);
+      result = buildDeterministicComparisonResult(
+        externalResponse.result,
+        payload,
+      );
       sources = externalResponse.sources;
     } else {
       const response = await openai.responses.create({
@@ -116,7 +119,7 @@ export async function POST(req: Request) {
         text: {
           format: {
             type: "json_schema",
-            name: "source_critic_comparison_pdf_v33_internal",
+            name: "source_critic_comparison_pdf_v35_internal",
             schema: COMPARISON_JSON_SCHEMA,
             strict: true,
           },
@@ -134,6 +137,7 @@ export async function POST(req: Request) {
 
       result = buildDeterministicComparisonResult(
         JSON.parse(raw) as ComparisonModelOutput,
+        payload,
       );
     }
 

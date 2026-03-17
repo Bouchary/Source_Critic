@@ -12,40 +12,40 @@ export interface ExternalSourceItem {
 
 export const analysisInputSchema = z.object({
   mode: analysisModeSchema.default("internal_only"),
-  title: z.string().trim().max(200).optional().default(""),
-  author: z.string().trim().max(200).optional().default(""),
-  documentType: z.string().trim().max(100).optional().default(""),
-  publicationContext: z.string().trim().max(300).optional().default(""),
+  title: z.string().trim().max(500).optional().default(""),
+  author: z.string().trim().max(300).optional().default(""),
+  documentType: z.string().trim().max(200).optional().default(""),
+  publicationContext: z.string().trim().max(1000).optional().default(""),
   text: z
     .string()
     .trim()
     .min(500, "Le texte doit contenir au moins 500 caractères.")
-    .max(50000, "Le texte est trop long pour cette V3.0."),
+    .max(50000, "Le texte est trop long pour cette V3.4."),
 });
 
 export const comparisonInputSchema = z.object({
   mode: analysisModeSchema.default("internal_only"),
   documentA: z.object({
-    title: z.string().trim().max(200).optional().default(""),
-    author: z.string().trim().max(200).optional().default(""),
-    documentType: z.string().trim().max(100).optional().default(""),
-    publicationContext: z.string().trim().max(300).optional().default(""),
+    title: z.string().trim().max(500).optional().default(""),
+    author: z.string().trim().max(300).optional().default(""),
+    documentType: z.string().trim().max(200).optional().default(""),
+    publicationContext: z.string().trim().max(1000).optional().default(""),
     text: z
       .string()
       .trim()
       .min(500, "Le document A doit contenir au moins 500 caractères.")
-      .max(50000, "Le document A est trop long pour cette V3.0."),
+      .max(50000, "Le document A est trop long pour cette V3.4."),
   }),
   documentB: z.object({
-    title: z.string().trim().max(200).optional().default(""),
-    author: z.string().trim().max(200).optional().default(""),
-    documentType: z.string().trim().max(100).optional().default(""),
-    publicationContext: z.string().trim().max(300).optional().default(""),
+    title: z.string().trim().max(500).optional().default(""),
+    author: z.string().trim().max(300).optional().default(""),
+    documentType: z.string().trim().max(200).optional().default(""),
+    publicationContext: z.string().trim().max(1000).optional().default(""),
     text: z
       .string()
       .trim()
       .min(500, "Le document B doit contenir au moins 500 caractères.")
-      .max(50000, "Le document B est trop long pour cette V3.0."),
+      .max(50000, "Le document B est trop long pour cette V3.4."),
   }),
 });
 
