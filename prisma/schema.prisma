@@ -23,18 +23,107 @@ enum InputMode {
   MIXED
 }
 
+enum AnalysisProfile {
+  ACADEMIC
+  GEOPOLITICAL
+  MEDIA
+  INSTITUTIONAL
+}
+
+enum SourcePolicy {
+  STRICT_RELIABLE
+  BALANCED
+  BROAD
+}
+
+enum ExportPreference {
+  PDF
+  PRINT
+}
+
+enum WorkspaceRole {
+  OWNER
+  EDITOR
+  VIEWER
+}
+
+enum RunStatus {
+  DRAFT
+  IN_REVIEW
+  VALIDATED
+}
+
 model User {
-  id             String        @id @default(cuid())
+  id             String            @id @default(cuid())
   name           String?
-  email          String?       @unique
+  email          String?           @unique
   emailVerified  DateTime?
   image          String?
   hashedPassword String?
   accounts       Account[]
   sessions       Session[]
   historyEntries HistoryEntry[]
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
+  preference     UserPreference?
+  workspaceLinks WorkspaceMember[]
+  runComments    RunComment[]
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+}
+
+model UserPreference {
+  id              String           @id @default(cuid())
+  userId          String           @unique
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  defaultMode     AnalysisMode     @default(INTERNAL_ONLY)
+  analysisProfile AnalysisProfile  @default(GEOPOLITICAL)
+  sourcePolicy    SourcePolicy     @default(BALANCED)
+
+  autoSaveRuns    Boolean          @default(true)
+  showCitations   Boolean          @default(true)
+  preferredExport ExportPreference @default(PDF)
+
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @default(now()) @updatedAt
+}
+
+model Workspace {
+  id           String            @id @default(cuid())
+  name         String
+  description  String?
+  members      WorkspaceMember[]
+  historyEntries HistoryEntry[]
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @default(now()) @updatedAt
+
+  @@index([createdAt(sort: Desc)])
+}
+
+model WorkspaceMember {
+  id          String        @id @default(cuid())
+  workspaceId String
+  userId      String
+  role        WorkspaceRole @default(VIEWER)
+  workspace   Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime      @default(now())
+
+  @@unique([workspaceId, userId])
+  @@index([userId])
+}
+
+model RunComment {
+  id             String       @id @default(cuid())
+  historyEntryId String
+  userId         String
+  body           String
+  historyEntry   HistoryEntry @relation(fields: [historyEntryId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @default(now()) @updatedAt
+
+  @@index([historyEntryId, createdAt(sort: Desc)])
+  @@index([userId])
 }
 
 model Account {
@@ -74,7 +163,12 @@ model VerificationToken {
 model HistoryEntry {
   id                 String       @id @default(cuid())
   userId             String?
+  workspaceId        String?
+  status             RunStatus    @default(DRAFT)
+
   user               User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+  workspace          Workspace?   @relation(fields: [workspaceId], references: [id], onDelete: SetNull)
+  comments           RunComment[]
 
   kind               EntryKind
   mode               AnalysisMode
@@ -103,5 +197,6 @@ model HistoryEntry {
   updatedAt          DateTime     @default(now()) @updatedAt
 
   @@index([userId, createdAt(sort: Desc)])
+  @@index([workspaceId, createdAt(sort: Desc)])
   @@index([createdAt(sort: Desc)])
 }

@@ -1,4 +1,8 @@
-import type { AnalysisInput, AnalysisResult } from "@/lib/schema";
+import type {
+  AnalysisInput,
+  AnalysisResult,
+  AuditSourceChainItem,
+} from "@/lib/schema";
 
 export interface AnalysisSignal {
   level: 0 | 1 | 2 | 3 | 4;
@@ -58,6 +62,16 @@ export interface AnalysisModelOutput {
   unknowns: string[];
   recommendations: string[];
   caveats: string[];
+  auditTrail: {
+    confidenceBoundary: string;
+    sourceTrustChain: AuditSourceChainItem[];
+    claimAudit: {
+      claimId: string;
+      status: "soutenu" | "contesté" | "non déterminable";
+      basis: string;
+    }[];
+    evidenceAlerts: string[];
+  };
 }
 
 function clamp0to4(value: number): 0 | 1 | 2 | 3 | 4 {
@@ -92,14 +106,18 @@ function countMatches(text: string, regex: RegExp) {
   return (text.match(regex) || []).length;
 }
 
-function evidenceProfile(input: AnalysisInput) {
-  const corpus = [
+function buildCorpus(input: AnalysisInput) {
+  return [
     input.title || "",
     input.author || "",
     input.documentType || "",
     input.publicationContext || "",
     input.text || "",
   ].join("\n");
+}
+
+function evidenceProfile(input: AnalysisInput) {
+  const corpus = buildCorpus(input);
 
   const numbers = countMatches(corpus, /\b\d+(?:[.,]\d+)?\b/g);
   const percentages = countMatches(corpus, /%|pour cent/gi);
@@ -118,14 +136,6 @@ function evidenceProfile(input: AnalysisInput) {
     input.publicationContext,
   ].filter((item) => (item || "").trim().length > 0).length;
 
-  const weighted =
-    numbers * 1 +
-    percentages * 2 +
-    urls * 4 +
-    quotes * 1 +
-    citationLike * 2 +
-    sourceMarkers * 2;
-
   return {
     numbers,
     percentages,
@@ -134,7 +144,111 @@ function evidenceProfile(input: AnalysisInput) {
     citationLike,
     sourceMarkers,
     metadataCount,
-    weighted,
+  };
+}
+
+function interpretiveProfile(input: AnalysisInput) {
+  const corpus = buildCorpus(input);
+
+  const hedges = countMatches(
+    corpus,
+    /\b(semble|semblerait|paraît|paraîtrait|pourrait|pourraient|suggère|suggèrent|laisse penser|on peut penser|probable|probablement|possible|possiblement|il est plausible|on dirait)\b/gi,
+  );
+
+  const causalClaims = countMatches(
+    corpus,
+    /\b(parce que|car|donc|entraîne|provoque|cause|explique|démontre|prouve|conduit à|résulte de)\b/gi,
+  );
+
+  const generalisations = countMatches(
+    corpus,
+    /\b(toujours|jamais|tous|toutes|nul|aucun|inévitable|nécessairement|forcément|en général|de manière générale)\b/gi,
+  );
+
+  const prescriptive = countMatches(
+    corpus,
+    /\b(il faut|doit|doivent|il convient|nécessaire|indispensable|impératif|obligation|responsabilité)\b/gi,
+  );
+
+  const evaluative = countMatches(
+    corpus,
+    /\b(grave|excellent|inacceptable|catastrophique|salutaire|dangereux|urgent|essentiel|majeur|mineur|décisif)\b/gi,
+  );
+
+  return {
+    hedges,
+    causalClaims,
+    generalisations,
+    prescriptive,
+    evaluative,
+  };
+}
+
+function contradictionProfile(input: AnalysisInput) {
+  const corpus = buildCorpus(input);
+
+  const contrastMarkers = countMatches(
+    corpus,
+    /\b(mais|cependant|toutefois|pourtant|néanmoins|en revanche|d'un côté|de l'autre|or|bien que|quoique|alors que)\b/gi,
+  );
+
+  const concessionMarkers = countMatches(
+    corpus,
+    /\b(certes|il est vrai que|même si|bien que|quoique|tout en)\b/gi,
+  );
+
+  const uncertaintyMarkers = countMatches(
+    corpus,
+    /\b(non déterminable|incertain|incertaine|inconnu|inconnue|on ignore|il manque|reste à établir|reste inconnu)\b/gi,
+  );
+
+  const absolutistMarkers = countMatches(
+    corpus,
+    /\b(sans aucun doute|certainement|à l'évidence|de façon indiscutable|incontestable|prouve que)\b/gi,
+  );
+
+  return {
+    contrastMarkers,
+    concessionMarkers,
+    uncertaintyMarkers,
+    absolutistMarkers,
+  };
+}
+
+function biasProfile(input: AnalysisInput) {
+  const corpus = buildCorpus(input);
+
+  const loadedTerms = countMatches(
+    corpus,
+    /\b(scandale|propagande|manipulation|mensonge|trahison|honte|dérive|abus|désastre|catastrophe|héroïque|toxique|illégitime)\b/gi,
+  );
+
+  const binaryMarkers = countMatches(
+    corpus,
+    /\b(eux|nous|camp|ennemi|traîtres|les vrais|les seuls|contre nous|contre eux)\b/gi,
+  );
+
+  const omissionMarkers = countMatches(
+    corpus,
+    /\b(uniquement|seulement|rien que|sans mentionner|sans évoquer|omettant|omission)\b/gi,
+  );
+
+  const teleologyMarkers = countMatches(
+    corpus,
+    /\b(inévitable|destiné à|avait vocation à|devait nécessairement|fin naturelle|aboutissement logique)\b/gi,
+  );
+
+  const moralCharge = countMatches(
+    corpus,
+    /\b(bien|mal|moral|immoral|vertueux|condamnable|juste|injuste)\b/gi,
+  );
+
+  return {
+    loadedTerms,
+    binaryMarkers,
+    omissionMarkers,
+    teleologyMarkers,
+    moralCharge,
   };
 }
 
@@ -215,6 +329,116 @@ function factualRobustnessSignal(input: AnalysisInput): AnalysisSignal {
   };
 }
 
+function interpretiveLoadSignal(input: AnalysisInput): AnalysisSignal {
+  const profile = interpretiveProfile(input);
+
+  const raw =
+    profile.hedges * 0.2 +
+    profile.causalClaims * 0.5 +
+    profile.generalisations * 0.8 +
+    profile.prescriptive * 0.6 +
+    profile.evaluative * 0.5;
+
+  let level: 0 | 1 | 2 | 3 | 4;
+  if (raw < 2) level = 0;
+  else if (raw < 4) level = 1;
+  else if (raw < 7) level = 2;
+  else if (raw < 10) level = 3;
+  else level = 4;
+
+  return {
+    level,
+    rationale:
+      `Charge interprétative estimée à partir de marqueurs observables : prudence=${profile.hedges}, causalité=${profile.causalClaims}, généralisations=${profile.generalisations}, prescriptif=${profile.prescriptive}, évaluatif=${profile.evaluative}.`,
+  };
+}
+
+function contradictionHandlingSignal(input: AnalysisInput): AnalysisSignal {
+  const profile = contradictionProfile(input);
+
+  const positive =
+    profile.contrastMarkers * 0.7 +
+    profile.concessionMarkers * 0.8 +
+    profile.uncertaintyMarkers * 0.8;
+
+  const negative = profile.absolutistMarkers * 0.8;
+
+  const raw = positive - negative;
+
+  let level: 0 | 1 | 2 | 3 | 4;
+  if (raw < 1) level = 0;
+  else if (raw < 2.5) level = 1;
+  else if (raw < 4.5) level = 2;
+  else if (raw < 7) level = 3;
+  else level = 4;
+
+  return {
+    level,
+    rationale:
+      `Prise en charge de la contradiction estimée à partir des marqueurs observables : contrastes=${profile.contrastMarkers}, concessions=${profile.concessionMarkers}, incertitude explicite=${profile.uncertaintyMarkers}, absolutisation=${profile.absolutistMarkers}.`,
+  };
+}
+
+function biasRiskSignal(input: AnalysisInput): AnalysisSignal {
+  const profile = biasProfile(input);
+
+  const raw =
+    profile.loadedTerms * 0.8 +
+    profile.binaryMarkers * 0.8 +
+    profile.omissionMarkers * 0.5 +
+    profile.teleologyMarkers * 0.7 +
+    profile.moralCharge * 0.4;
+
+  let level: 0 | 1 | 2 | 3 | 4;
+  if (raw < 1.5) level = 0;
+  else if (raw < 3) level = 1;
+  else if (raw < 5.5) level = 2;
+  else if (raw < 8) level = 3;
+  else level = 4;
+
+  return {
+    level,
+    rationale:
+      `Risque de biais estimé à partir de marqueurs observables : charge lexicale=${profile.loadedTerms}, opposition binaire=${profile.binaryMarkers}, omissions explicites=${profile.omissionMarkers}, téléologie=${profile.teleologyMarkers}, charge morale=${profile.moralCharge}.`,
+  };
+}
+
+function normalizeSourceTrustChain(items: AuditSourceChainItem[] | undefined) {
+  return (items || []).map((item) => ({
+    title: item.title || "",
+    domain: item.domain || "",
+    url: item.url || "",
+    sourceType: item.sourceType || "indéterminé",
+    reliability: item.reliability || "moyenne",
+    rationale: item.rationale || "",
+  }));
+}
+
+function normalizeAuditTrail(
+  auditTrail: AnalysisModelOutput["auditTrail"],
+  input: AnalysisInput,
+) {
+  const profile = evidenceProfile(input);
+
+  const fallbackAlerts =
+    auditTrail.evidenceAlerts?.length > 0
+      ? auditTrail.evidenceAlerts
+      : [
+          `Le document contient ${profile.urls} URL explicites.`,
+          `Le document contient ${profile.citationLike} marqueurs de citation.`,
+          `Le document contient ${profile.sourceMarkers} marqueurs de source.`,
+        ];
+
+  return {
+    confidenceBoundary:
+      auditTrail.confidenceBoundary ||
+      "Le rapport distingue ce qui est directement observable dans le texte, ce qui relève d’une inférence prudente et ce qui reste non déterminable.",
+    sourceTrustChain: normalizeSourceTrustChain(auditTrail.sourceTrustChain),
+    claimAudit: auditTrail.claimAudit || [],
+    evidenceAlerts: fallbackAlerts,
+  };
+}
+
 export function buildDeterministicAnalysisResult(
   model: AnalysisModelOutput,
   input: AnalysisInput,
@@ -222,12 +446,9 @@ export function buildDeterministicAnalysisResult(
   const traceability = traceabilitySignal(input);
   const factualRobustness = factualRobustnessSignal(input);
   const sourceTransparency = sourceTransparencySignal(input);
-
-  const interpretiveLoad = clamp0to4(model.scoreSignals.interpretiveLoad.level);
-  const contradictionHandling = clamp0to4(
-    model.scoreSignals.contradictionHandling.level,
-  );
-  const biasRisk = clamp0to4(model.scoreSignals.biasRisk.level);
+  const interpretiveLoad = interpretiveLoadSignal(input);
+  const contradictionHandling = contradictionHandlingSignal(input);
+  const biasRisk = biasRiskSignal(input);
 
   return {
     documentProfile: {
@@ -255,14 +476,14 @@ export function buildDeterministicAnalysisResult(
         rationale: factualRobustness.rationale,
       },
       interpretiveLoad: {
-        score: clampScore(to100From4(interpretiveLoad)),
-        label: labelFromScore(to100From4(interpretiveLoad)),
-        rationale: model.scoreSignals.interpretiveLoad.rationale,
+        score: clampScore(to100From4(interpretiveLoad.level)),
+        label: labelFromScore(to100From4(interpretiveLoad.level)),
+        rationale: interpretiveLoad.rationale,
       },
       contradictionHandling: {
-        score: clampScore(to100From4(contradictionHandling)),
-        label: labelFromScore(to100From4(contradictionHandling)),
-        rationale: model.scoreSignals.contradictionHandling.rationale,
+        score: clampScore(to100From4(contradictionHandling.level)),
+        label: labelFromScore(to100From4(contradictionHandling.level)),
+        rationale: contradictionHandling.rationale,
       },
       sourceTransparency: {
         score: clampScore(to100From4(sourceTransparency.level)),
@@ -270,9 +491,9 @@ export function buildDeterministicAnalysisResult(
         rationale: sourceTransparency.rationale,
       },
       biasRisk: {
-        score: clampScore(to100From4(biasRisk)),
-        label: labelFromScore(to100From4(biasRisk)),
-        rationale: model.scoreSignals.biasRisk.rationale,
+        score: clampScore(to100From4(biasRisk.level)),
+        label: labelFromScore(to100From4(biasRisk.level)),
+        rationale: biasRisk.rationale,
       },
     },
     authorPositioning: model.authorPositioning,
@@ -281,5 +502,6 @@ export function buildDeterministicAnalysisResult(
     unknowns: model.unknowns,
     recommendations: model.recommendations,
     caveats: model.caveats,
+    auditTrail: normalizeAuditTrail(model.auditTrail, input),
   };
 }

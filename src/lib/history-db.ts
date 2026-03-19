@@ -3,6 +3,7 @@ import {
   EntryKind,
   AnalysisMode as PrismaAnalysisMode,
   InputMode as PrismaInputMode,
+  RunStatus as PrismaRunStatus,
 } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import type {
@@ -15,6 +16,7 @@ import type { HistoryEntry } from "@/types/history";
 
 type AppHistoryKind = "analysis" | "comparison";
 type AppInputMode = "text" | "pdf" | "mixed";
+type AppRunStatus = "draft" | "in_review" | "validated";
 
 function toInputJsonValue(value: unknown): Prisma.InputJsonValue {
   return JSON.parse(JSON.stringify(value)) as Prisma.InputJsonValue;
@@ -52,6 +54,12 @@ function prismaInputModeToApp(mode: PrismaInputMode): AppInputMode {
   return "text";
 }
 
+function prismaStatusToApp(status: PrismaRunStatus): AppRunStatus {
+  if (status === PrismaRunStatus.IN_REVIEW) return "in_review";
+  if (status === PrismaRunStatus.VALIDATED) return "validated";
+  return "draft";
+}
+
 function normalizeSources(value: unknown): ExternalSourceItem[] {
   if (!Array.isArray(value)) return [];
 
@@ -71,6 +79,7 @@ function mapDbEntry(entry: {
   kind: EntryKind;
   mode: PrismaAnalysisMode;
   inputMode: PrismaInputMode;
+  status: PrismaRunStatus;
   title: string | null;
   author: string | null;
   documentType: string | null;
@@ -86,6 +95,9 @@ function mapDbEntry(entry: {
   resultJson: Prisma.JsonValue;
   sourcesJson: Prisma.JsonValue | null;
   createdAt: Date;
+  workspaceId: string | null;
+  workspace?: { name: string } | null;
+  _count?: { comments: number };
 }): HistoryEntry {
   const base = {
     id: entry.id,
@@ -94,6 +106,10 @@ function mapDbEntry(entry: {
     inputMode: prismaInputModeToApp(entry.inputMode),
     createdAt: entry.createdAt.toISOString(),
     sources: normalizeSources(entry.sourcesJson),
+    status: prismaStatusToApp(entry.status),
+    workspaceId: entry.workspaceId ?? null,
+    workspaceName: entry.workspace?.name ?? null,
+    commentCount: entry._count?.comments ?? 0,
   };
 
   if (entry.kind === EntryKind.ANALYSIS) {
@@ -125,6 +141,7 @@ function mapDbEntry(entry: {
 
 export async function saveAnalysisToDb(params: {
   userId?: string | null;
+  workspaceId?: string | null;
   mode: AnalysisMode;
   inputMode: "text" | "pdf";
   title: string;
@@ -139,6 +156,7 @@ export async function saveAnalysisToDb(params: {
   return prisma.historyEntry.create({
     data: {
       userId: params.userId ?? null,
+      workspaceId: params.workspaceId ?? null,
       kind: appKindToPrisma("analysis"),
       mode: appModeToPrisma(params.mode),
       inputMode: appInputModeToPrisma(params.inputMode),
@@ -156,6 +174,7 @@ export async function saveAnalysisToDb(params: {
 
 export async function saveComparisonToDb(params: {
   userId?: string | null;
+  workspaceId?: string | null;
   mode: AnalysisMode;
   inputMode: AppInputMode;
   documentATitle: string;
@@ -170,6 +189,7 @@ export async function saveComparisonToDb(params: {
   return prisma.historyEntry.create({
     data: {
       userId: params.userId ?? null,
+      workspaceId: params.workspaceId ?? null,
       kind: appKindToPrisma("comparison"),
       mode: appModeToPrisma(params.mode),
       inputMode: appInputModeToPrisma(params.inputMode),
@@ -188,6 +208,14 @@ export async function saveComparisonToDb(params: {
 export async function getHistoryFromDb(userId?: string | null): Promise<HistoryEntry[]> {
   const rows = await prisma.historyEntry.findMany({
     where: userId ? { userId } : undefined,
+    include: {
+      workspace: {
+        select: { name: true },
+      },
+      _count: {
+        select: { comments: true },
+      },
+    },
     orderBy: { createdAt: "desc" },
   });
 
@@ -199,6 +227,14 @@ export async function getHistoryEntryById(id: string, userId?: string | null): P
     where: {
       id,
       ...(userId ? { userId } : {}),
+    },
+    include: {
+      workspace: {
+        select: { name: true },
+      },
+      _count: {
+        select: { comments: true },
+      },
     },
   });
 

@@ -5,38 +5,50 @@ import type {
   ExternalSourceItem,
 } from "@/lib/schema";
 
-export type HistoryKind = "analysis" | "comparison";
-export type HistoryInputMode = "text" | "pdf" | "mixed";
+export type HistoryEntry =
+  | {
+      id: string;
+      kind: "analysis";
+      mode: AnalysisMode;
+      inputMode: "text" | "pdf" | "mixed";
+      createdAt: string;
+      title: string;
+      author: string;
+      documentType: string;
+      publicationContext: string;
+      rawText: string;
+      sourceFileName?: string;
+      result: AnalysisResult;
+      sources: ExternalSourceItem[];
+      status: "draft" | "in_review" | "validated";
+      workspaceId?: string | null;
+      workspaceName?: string | null;
+      commentCount: number;
+    }
+  | {
+      id: string;
+      kind: "comparison";
+      mode: AnalysisMode;
+      inputMode: "text" | "pdf" | "mixed";
+      createdAt: string;
+      documentATitle: string;
+      documentBTitle: string;
+      rawTextA: string;
+      rawTextB: string;
+      sourceFileNameA?: string;
+      sourceFileNameB?: string;
+      result: ComparisonResult;
+      sources: ExternalSourceItem[];
+      status: "draft" | "in_review" | "validated";
+      workspaceId?: string | null;
+      workspaceName?: string | null;
+      commentCount: number;
+    };
 
-interface HistoryEntryBase {
+export interface RunCommentView {
   id: string;
-  kind: HistoryKind;
-  mode: AnalysisMode;
-  inputMode: HistoryInputMode;
+  body: string;
   createdAt: string;
-  sources: ExternalSourceItem[];
+  authorName: string;
+  authorEmail: string;
 }
-
-export interface AnalysisHistoryEntry extends HistoryEntryBase {
-  kind: "analysis";
-  title: string;
-  author: string;
-  documentType: string;
-  publicationContext: string;
-  sourceFileName?: string;
-  rawText: string;
-  result: AnalysisResult;
-}
-
-export interface ComparisonHistoryEntry extends HistoryEntryBase {
-  kind: "comparison";
-  documentATitle: string;
-  documentBTitle: string;
-  rawTextA: string;
-  rawTextB: string;
-  sourceFileNameA?: string;
-  sourceFileNameB?: string;
-  result: ComparisonResult;
-}
-
-export type HistoryEntry = AnalysisHistoryEntry | ComparisonHistoryEntry;

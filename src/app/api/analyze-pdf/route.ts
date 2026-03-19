@@ -23,6 +23,28 @@ import { auth } from "@/auth";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+function safeParseModelOutput(raw: string): AnalysisModelOutput {
+  const trimmed = raw.trim();
+
+  if (!trimmed) {
+    throw new Error("Aucune sortie JSON exploitable n’a été générée.");
+  }
+
+  if (trimmed.startsWith("<")) {
+    throw new Error(
+      "Une réponse HTML a été reçue à la place du JSON attendu. Vérifier la route ou l’appel amont.",
+    );
+  }
+
+  try {
+    return JSON.parse(trimmed) as AnalysisModelOutput;
+  } catch {
+    throw new Error(
+      `Sortie non JSON reçue. Début de réponse : ${trimmed.slice(0, 300)}`,
+    );
+  }
+}
+
 export async function POST(req: Request) {
   try {
     const session = await auth();
@@ -75,16 +97,31 @@ export async function POST(req: Request) {
     let sources: ExternalSourceItem[] = [];
 
     if (external) {
-      const externalResponse =
-        await createExternalStructuredResponse<AnalysisModelOutput>({
-          instructions: EXTERNAL_SYSTEM_PROMPT,
-          input: buildUserPrompt(payload),
-          schema: ANALYSIS_JSON_SCHEMA,
-          name: "source_critic_analysis_pdf_v37",
-        });
+      try {
+        const externalResponse =
+          await createExternalStructuredResponse<AnalysisModelOutput>({
+            instructions: EXTERNAL_SYSTEM_PROMPT,
+            input: buildUserPrompt(payload),
+            schema: ANALYSIS_JSON_SCHEMA,
+            name: "source_critic_analysis_pdf_v37",
+          });
 
-      result = buildDeterministicAnalysisResult(externalResponse.result, payload);
-      sources = externalResponse.sources;
+        result = buildDeterministicAnalysisResult(
+          externalResponse.result,
+          payload,
+        );
+        sources = externalResponse.sources;
+      } catch (error) {
+        const message =
+          error instanceof Error
+            ? error.message
+            : "Erreur inconnue dans le mode externe.";
+
+        throw new Error(
+          "Mode externe PDF en échec. Le helper createExternalStructuredResponse a renvoyé une réponse invalide. Détail : " +
+            message,
+        );
+      }
     } else {
       const response = await openai.responses.create({
         model: process.env.OPENAI_MODEL || "gpt-5",
@@ -109,10 +146,8 @@ export async function POST(req: Request) {
         );
       }
 
-      result = buildDeterministicAnalysisResult(
-        JSON.parse(raw) as AnalysisModelOutput,
-        payload,
-      );
+      const parsedResult = safeParseModelOutput(raw);
+      result = buildDeterministicAnalysisResult(parsedResult, payload);
     }
 
     await saveAnalysisToDb({

@@ -1,16 +1,30 @@
 "use client";
 
+import { useState } from "react";
 import { Printer } from "lucide-react";
 
-interface ExportReportButtonProps {
+export interface ExportReportButtonProps {
   targetId: string;
+  label?: string;
+  filename?: string;
   fileTitle?: string;
+}
+
+function sanitizeFilename(value: string) {
+  return value
+    .replace(/[^a-z0-9\-_]+/gi, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
 }
 
 export function ExportReportButton({
   targetId,
-  fileTitle = "rapport",
+  label = "Exporter en PDF",
+  filename,
+  fileTitle,
 }: ExportReportButtonProps) {
+  const [pending, setPending] = useState(false);
+
   function handlePrint() {
     const target = document.getElementById(targetId);
 
@@ -18,6 +32,10 @@ export function ExportReportButton({
       window.alert("Impossible de trouver le contenu à exporter.");
       return;
     }
+
+    const finalTitle =
+      sanitizeFilename(filename || fileTitle || "rapport-source-critic") ||
+      "rapport-source-critic";
 
     const printWindow = window.open("", "_blank", "width=1200,height=900");
 
@@ -33,7 +51,7 @@ export function ExportReportButton({
       <html lang="fr">
         <head>
           <meta charset="utf-8" />
-          <title>${fileTitle}</title>
+          <title>${finalTitle}</title>
           <style>
             * {
               box-sizing: border-box;
@@ -191,18 +209,30 @@ export function ExportReportButton({
     printWindow.onload = () => {
       printWindow.focus();
       printWindow.print();
+      setTimeout(() => {
+        printWindow.close();
+      }, 300);
     };
   }
 
   return (
     <button
       type="button"
-      onClick={handlePrint}
+      disabled={pending}
+      onClick={() => {
+        try {
+          setPending(true);
+          handlePrint();
+        } finally {
+          setTimeout(() => setPending(false), 500);
+        }
+      }}
       data-no-print
-      className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-slate-200 transition hover:bg-white/10"
+      aria-controls={targetId}
+      className="inline-flex items-center gap-2 rounded-2xl border border-slate-700 bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800 disabled:opacity-60"
     >
       <Printer className="h-4 w-4" />
-      Exporter en PDF
+      {pending ? "Préparation..." : label}
     </button>
   );
 }

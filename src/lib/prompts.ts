@@ -32,6 +32,14 @@ RÈGLES
   4 = très élevé
 - Distingue strictement le texte, l’inférence prudente et l’inconnu.
 - Chaque biais signalé doit être relié à un extrait ou à un trait textuel observable.
+- Pour chaque claim clé, tu dois fournir un statut d’audit :
+  - soutenu
+  - contesté
+  - non déterminable
+- Tu dois aussi produire :
+  - une frontière de confiance,
+  - une chaîne de confiance des sources,
+  - des alertes d’étayage.
 
 FORMAT
 Réponds uniquement en JSON valide conforme au schéma attendu.
@@ -70,6 +78,14 @@ RÈGLES
   3 = élevé
   4 = très élevé
 - Si les sources ne suffisent pas, dis-le explicitement.
+- Pour chaque claim clé, tu dois fournir un statut d’audit :
+  - soutenu
+  - contesté
+  - non déterminable
+- Tu dois aussi produire :
+  - une frontière de confiance,
+  - une chaîne de confiance des sources,
+  - des alertes d’étayage.
 
 FORMAT
 Réponds uniquement en JSON valide conforme au schéma attendu.
@@ -108,6 +124,16 @@ Consignes :
 - observableElements : uniquement des éléments déductibles du texte ou des métadonnées.
 - nonInferableElements : ce qui ne peut pas être établi sans sources externes.
 - keyClaims : entre 6 et 10 items.
+- claimAudit : un item par keyClaim, avec claimId cohérent.
+- sourceTrustChain : entre 0 et 8 items ; si mode interne sans source explicite, rester prudent.
+- Chaque item de sourceTrustChain doit toujours contenir :
+  - title
+  - domain
+  - url (mettre chaîne vide si inconnu)
+  - sourceType
+  - reliability
+  - rationale
+- evidenceAlerts : entre 3 et 8 items.
 - biasMap : entre 4 et 8 items.
 - unknowns : entre 4 et 10 items.
 - recommendations : entre 4 et 8 items.
@@ -130,6 +156,20 @@ const signalSchema = {
     },
   },
   required: ["level", "rationale"],
+} as const;
+
+const auditSourceSchema = {
+  type: "object",
+  additionalProperties: false,
+  properties: {
+    title: { type: "string" },
+    domain: { type: "string" },
+    url: { type: "string" },
+    sourceType: { type: "string" },
+    reliability: { type: "string" },
+    rationale: { type: "string" },
+  },
+  required: ["title", "domain", "url", "sourceType", "reliability", "rationale"],
 } as const;
 
 export const ANALYSIS_JSON_SCHEMA = {
@@ -224,6 +264,35 @@ export const ANALYSIS_JSON_SCHEMA = {
       type: "array",
       items: { type: "string" },
     },
+    auditTrail: {
+      type: "object",
+      additionalProperties: false,
+      properties: {
+        confidenceBoundary: { type: "string" },
+        sourceTrustChain: {
+          type: "array",
+          items: auditSourceSchema,
+        },
+        claimAudit: {
+          type: "array",
+          items: {
+            type: "object",
+            additionalProperties: false,
+            properties: {
+              claimId: { type: "string" },
+              status: { type: "string" },
+              basis: { type: "string" },
+            },
+            required: ["claimId", "status", "basis"],
+          },
+        },
+        evidenceAlerts: {
+          type: "array",
+          items: { type: "string" },
+        },
+      },
+      required: ["confidenceBoundary", "sourceTrustChain", "claimAudit", "evidenceAlerts"],
+    },
   },
   required: [
     "documentProfile",
@@ -236,5 +305,6 @@ export const ANALYSIS_JSON_SCHEMA = {
     "unknowns",
     "recommendations",
     "caveats",
+    "auditTrail",
   ],
 } as const;

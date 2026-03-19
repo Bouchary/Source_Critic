@@ -1,26 +1,26 @@
 import { Bell, Database, Settings, SlidersHorizontal } from "lucide-react";
 import { requireUser } from "@/lib/auth-helpers";
+import { getOrCreateUserPreference } from "@/lib/user-preferences";
+import { PreferencesForm } from "@/components/preferences-form";
 
-function SettingBlock({
+function SettingInfo({
   title,
   description,
-  value,
 }: {
   title: string;
   description: string;
-  value: string;
 }) {
   return (
     <div className="rounded-2xl border border-white/10 bg-slate-950/20 p-4">
       <h2 className="text-sm font-semibold text-white">{title}</h2>
       <p className="mt-2 text-sm leading-6 text-slate-300">{description}</p>
-      <p className="mt-3 text-xs text-slate-400">État actuel : {value}</p>
     </div>
   );
 }
 
 export default async function SettingsPage() {
-  await requireUser();
+  const user = await requireUser();
+  const preference = await getOrCreateUserPreference(user.id);
 
   return (
     <main className="min-h-screen bg-transparent px-4 py-8 md:px-8">
@@ -36,27 +36,28 @@ export default async function SettingsPage() {
                 Paramètres
               </h1>
               <p className="mt-2 text-sm leading-6 text-slate-300">
-                Base des futurs réglages produit et utilisateur.
+                Réglez les préférences métier et le comportement par défaut de votre compte.
               </p>
             </div>
           </div>
         </section>
 
-        <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          <SettingBlock
-            title="Mode par défaut"
-            description="Préparer un choix utilisateur entre analyse interne et recherche externe encadrée."
-            value="Non personnalisable pour l’instant"
+        <section className="rounded-3xl border border-white/10 bg-white/5 p-5 shadow-xl backdrop-blur md:p-6">
+          <PreferencesForm initialPreference={preference} />
+        </section>
+
+        <section className="grid gap-4 md:grid-cols-3">
+          <SettingInfo
+            title="Réglages d’analyse"
+            description="La page est désormais branchée à la base utilisateur. Les préférences serviront de socle aux profils métier."
           />
-          <SettingBlock
-            title="Sources externes"
-            description="Préparer les futures politiques de citation, de filtrage ou de confiance documentaire."
-            value="Pilotage système uniquement"
+          <SettingInfo
+            title="Stockage et replay"
+            description="Les runs restent liés à votre compte. Les règles d’affichage et de sauvegarde deviennent personnalisables."
           />
-          <SettingBlock
-            title="Exports"
-            description="Préparer la configuration des exports PDF et des rapports rejouables."
-            value="Export via impression ciblée"
+          <SettingInfo
+            title="Évolution"
+            description="Ces préférences serviront ensuite aux profils, à la traçabilité avancée, puis aux espaces collaboratifs."
           />
         </section>
 
@@ -65,11 +66,11 @@ export default async function SettingsPage() {
             <div className="mb-3 flex items-center gap-2">
               <SlidersHorizontal className="h-4 w-4 text-slate-200" />
               <h2 className="text-sm font-semibold text-white">
-                Réglages d’analyse
+                Profils d’analyse
               </h2>
             </div>
             <p className="text-sm leading-6 text-slate-300">
-              À connecter plus tard aux profils d’analyse et aux pondérations métier.
+              Prépare la différenciation académique, géopolitique, médiatique et institutionnelle.
             </p>
           </div>
 
@@ -77,11 +78,11 @@ export default async function SettingsPage() {
             <div className="mb-3 flex items-center gap-2">
               <Database className="h-4 w-4 text-slate-200" />
               <h2 className="text-sm font-semibold text-white">
-                Stockage et replay
+                Préférences persistées
               </h2>
             </div>
             <p className="text-sm leading-6 text-slate-300">
-              Vos runs sont désormais rattachés à votre compte utilisateur.
+              Les choix sont enregistrés en base et rattachés au compte utilisateur.
             </p>
           </div>
 
@@ -89,11 +90,11 @@ export default async function SettingsPage() {
             <div className="mb-3 flex items-center gap-2">
               <Bell className="h-4 w-4 text-slate-200" />
               <h2 className="text-sm font-semibold text-white">
-                Notifications
+                Suite logique
               </h2>
             </div>
             <p className="text-sm leading-6 text-slate-300">
-              Prévu plus tard pour les espaces utilisateurs et les workflows équipe.
+              Étape suivante : traçabilité avancée des scores et des justifications.
             </p>
           </div>
         </section>

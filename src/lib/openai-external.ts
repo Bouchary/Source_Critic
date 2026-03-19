@@ -44,6 +44,28 @@ function extractOutputText(data: unknown): string {
   return chunks.join("\n").trim();
 }
 
+function safeParseJson(raw: string, contextLabel: string): unknown {
+  const trimmed = raw.trim();
+
+  if (!trimmed) {
+    throw new Error(`${contextLabel} : réponse vide.`);
+  }
+
+  if (trimmed.startsWith("<")) {
+    throw new Error(
+      `${contextLabel} : une réponse HTML a été reçue à la place du JSON attendu. Début : ${trimmed.slice(0, 300)}`,
+    );
+  }
+
+  try {
+    return JSON.parse(trimmed);
+  } catch {
+    throw new Error(
+      `${contextLabel} : réponse non JSON valide. Début : ${trimmed.slice(0, 300)}`,
+    );
+  }
+}
+
 export async function createExternalStructuredResponse<T>(params: {
   instructions: string;
   input: string;
@@ -80,15 +102,40 @@ export async function createExternalStructuredResponse<T>(params: {
     }),
   });
 
-  const data = await response.json();
+  const contentType = response.headers.get("content-type") || "";
+  const rawHttpBody = await response.text();
 
   if (!response.ok) {
+    if (!contentType.includes("application/json")) {
+      throw new Error(
+        `Erreur OpenAI côté recherche externe : HTTP ${response.status}. Réponse non JSON reçue (${contentType || "content-type inconnu"}). Début : ${rawHttpBody.slice(0, 300)}`,
+      );
+    }
+
+    const errorData = safeParseJson(
+      rawHttpBody,
+      "Erreur OpenAI côté recherche externe",
+    ) as Record<string, unknown>;
+
     const message =
-      typeof data?.error?.message === "string"
-        ? data.error.message
-        : "Erreur OpenAI côté recherche externe.";
+      typeof (errorData.error as Record<string, unknown> | undefined)?.message ===
+      "string"
+        ? ((errorData.error as Record<string, unknown>).message as string)
+        : `HTTP ${response.status} côté recherche externe.`;
+
     throw new Error(message);
   }
+
+  if (!contentType.includes("application/json")) {
+    throw new Error(
+      `Réponse OpenAI non JSON reçue (${contentType || "content-type inconnu"}). Début : ${rawHttpBody.slice(0, 300)}`,
+    );
+  }
+
+  const data = safeParseJson(
+    rawHttpBody,
+    "Réponse OpenAI recherche externe",
+  );
 
   const raw = extractOutputText(data);
 
@@ -103,7 +150,7 @@ export async function createExternalStructuredResponse<T>(params: {
     result = JSON.parse(raw) as T;
   } catch {
     throw new Error(
-      "La réponse du mode externe n’est pas un JSON valide conforme au schéma attendu.",
+      `La réponse du mode externe n’est pas un JSON valide conforme au schéma attendu. Début : ${raw.slice(0, 300)}`,
     );
   }
 

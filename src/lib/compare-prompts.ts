@@ -1,77 +1,45 @@
 import type { ComparisonInput } from "@/lib/schema";
 
 export const COMPARE_INTERNAL_SYSTEM_PROMPT = `
-Tu es un analyste méthodologique spécialisé dans la comparaison critique de deux sources.
+Tu es un analyste méthodologique spécialisé dans la comparaison critique de documents.
 
 MODE
 Lecture interne uniquement.
 
 RÈGLES
-- Tu compares uniquement les textes fournis.
+- Travaille uniquement à partir des deux documents fournis.
 - N’utilise aucune source externe.
-- N’invente jamais aucun fait, aucune source, aucune date, aucune identité, aucun contexte.
-- N’extrapole jamais au-delà des informations fournies.
-- Si une information manque, indique explicitement qu’elle est non déterminable.
-- Ne produis jamais de verdict de vérité absolue.
-- Ne dis jamais qui ment.
-- Tu ne calcules pas des notes libres de 0 à 100.
-- Tu ne notes pas la temporalité.
-- Tu ne notes pas l’étayage.
-- Tu ne notes pas le cadrage.
-- Ces trois dimensions seront calculées côté application.
-- À la place, tu fournis seulement des signaux bornés de 0 à 4 pour :
-  1. recouvrement thématique,
-  2. conflit de thèse,
-  3. distance de genre/finalité.
-- Échelle :
-  0 = très faible / très proche
-  1 = faible
-  2 = intermédiaire
-  3 = élevé
-  4 = très élevé / très éloigné
-- Chaque signal doit être justifié très brièvement.
-- Distingue strictement :
-  1. convergences observables,
-  2. divergences observables,
-  3. différences de cadrage formulées qualitativement,
-  4. différences d’étayage formulées qualitativement,
-  5. angles morts,
-  6. limites de comparabilité.
+- N’invente aucun fait, aucune source, aucune date.
+- Ne conclus jamais à une vérité absolue.
+- N’attribue pas d’intention psychologique sans base textuelle solide.
+- Les scores doivent rester cohérents avec les justifications.
+- Tu dois produire aussi :
+  - une frontière de confiance,
+  - une chaîne de confiance des sources,
+  - des alertes d’étayage,
+  - un jugement explicite de comparabilité.
 
 FORMAT
 Réponds uniquement en JSON valide conforme au schéma attendu.
 `;
 
 export const COMPARE_EXTERNAL_SYSTEM_PROMPT = `
-Tu es un analyste méthodologique spécialisé dans la comparaison critique de deux sources.
+Tu es un analyste méthodologique spécialisé dans la comparaison critique de documents.
 
 MODE
 Recherche externe encadrée.
 
 RÈGLES
 - Tu peux utiliser la recherche web intégrée si nécessaire.
-- N’invente jamais aucun fait, aucune source, aucune date, aucune identité, aucun contexte.
-- N’extrapole jamais au-delà des informations disponibles.
-- Si une information manque, indique explicitement qu’elle est non déterminable.
-- Ne produis jamais de verdict de vérité absolue.
-- Ne dis jamais qui ment.
-- Tu ne calcules pas des notes libres de 0 à 100.
-- Tu ne notes pas la temporalité.
-- Tu ne notes pas l’étayage.
-- Tu ne notes pas le cadrage.
-- Ces trois dimensions seront calculées côté application.
-- À la place, tu fournis seulement des signaux bornés de 0 à 4 pour :
-  1. recouvrement thématique,
-  2. conflit de thèse,
-  3. distance de genre/finalité.
-- Échelle :
-  0 = très faible / très proche
-  1 = faible
-  2 = intermédiaire
-  3 = élevé
-  4 = très élevé / très éloigné
-- Chaque signal doit être justifié très brièvement.
-- Si les sources externes ne suffisent pas, dis-le explicitement.
+- N’invente aucun fait, aucune source, aucune date.
+- Appuie-toi prioritairement sur des sources documentées et fiables.
+- Ne conclus jamais à une vérité absolue.
+- Les scores doivent rester cohérents avec les justifications.
+- Tu dois produire aussi :
+  - une frontière de confiance,
+  - une chaîne de confiance des sources,
+  - des alertes d’étayage,
+  - un jugement explicite de comparabilité.
 
 FORMAT
 Réponds uniquement en JSON valide conforme au schéma attendu.
@@ -84,11 +52,11 @@ export function buildCompareUserPrompt(input: ComparisonInput) {
       : "Lecture interne";
 
   return `
-COMPARAISON DE DEUX DOCUMENTS
+COMPARAISON CRITIQUE DE DEUX DOCUMENTS
 
 Mode demandé : ${modeLabel}
 
-Document A :
+DOCUMENT A
 - Titre : ${input.documentA.title || "non fourni"}
 - Auteur : ${input.documentA.author || "non fourni"}
 - Type : ${input.documentA.documentType || "non fourni"}
@@ -99,7 +67,7 @@ Texte A :
 ${input.documentA.text}
 """
 
-Document B :
+DOCUMENT B
 - Titre : ${input.documentB.title || "non fourni"}
 - Auteur : ${input.documentB.author || "non fourni"}
 - Type : ${input.documentB.documentType || "non fourni"}
@@ -112,37 +80,49 @@ ${input.documentB.text}
 
 Consignes :
 - comparisonProfile.mode doit être "${input.mode}".
-- comparisonProfile.analysisScope doit expliciter la portée réelle de la comparaison selon le mode.
-- executiveSummary : 140 à 220 mots.
-- methodologyNotice : 70 à 120 mots.
-- scoreSignals.topicOverlap : degré de recouvrement thématique.
-- scoreSignals.thesisConflict : degré de conflit entre les thèses / conclusions.
-- scoreSignals.genreDistance : distance de genre, finalité et public visé.
-- commonPoints : 4 à 8 items.
-- divergences : 4 à 8 items.
-- framingDifferences : 4 à 8 items, qualitatives uniquement.
-- supportDifferences : 4 à 8 items, qualitatives uniquement.
-- blindSpots.documentA : 3 à 6 items.
-- blindSpots.documentB : 3 à 6 items.
-- caveats : 3 à 6 items.
-- recommendations : 4 à 8 items.
+- executiveSummary : 120 à 180 mots.
+- methodologyNotice : 60 à 100 mots.
+- commonGround : entre 4 et 8 items.
+- divergences : entre 4 et 8 items.
+- blindSpots : entre 4 et 8 items.
+- reservations : entre 3 et 6 items.
+- sourceTrustChain : entre 0 et 8 items ; si mode interne sans source explicite, rester prudent.
+- Chaque item de sourceTrustChain doit toujours contenir :
+  - title
+  - domain
+  - url (mettre chaîne vide si inconnu)
+  - sourceType
+  - reliability
+  - rationale
+- evidenceAlerts : entre 3 et 8 items.
+- comparabilityJudgement doit être haute, moyenne ou faible.
+- L’analyse de cadrage doit être nette mais prudente.
 `;
 }
 
-const signalSchema = {
+const scoreSchema = {
   type: "object",
   additionalProperties: false,
   properties: {
-    level: {
-      type: "integer",
-      minimum: 0,
-      maximum: 4,
-    },
-    rationale: {
-      type: "string",
-    },
+    score: { type: "number" },
+    label: { type: "string" },
+    rationale: { type: "string" },
   },
-  required: ["level", "rationale"],
+  required: ["score", "label", "rationale"],
+} as const;
+
+const auditSourceSchema = {
+  type: "object",
+  additionalProperties: false,
+  properties: {
+    title: { type: "string" },
+    domain: { type: "string" },
+    url: { type: "string" },
+    sourceType: { type: "string" },
+    reliability: { type: "string" },
+    rationale: { type: "string" },
+  },
+  required: ["title", "domain", "url", "sourceType", "reliability", "rationale"],
 } as const;
 
 export const COMPARISON_JSON_SCHEMA = {
@@ -155,74 +135,122 @@ export const COMPARISON_JSON_SCHEMA = {
       properties: {
         documentATitle: { type: "string" },
         documentBTitle: { type: "string" },
-        analysisScope: { type: "string" },
+        documentAType: { type: "string" },
+        documentBType: { type: "string" },
+        comparisonScope: { type: "string" },
         mode: { type: "string" },
       },
-      required: ["documentATitle", "documentBTitle", "analysisScope", "mode"],
+      required: [
+        "documentATitle",
+        "documentBTitle",
+        "documentAType",
+        "documentBType",
+        "comparisonScope",
+        "mode",
+      ],
     },
     executiveSummary: { type: "string" },
     methodologyNotice: { type: "string" },
-    scoreSignals: {
+    overallAssessment: {
       type: "object",
       additionalProperties: false,
       properties: {
-        topicOverlap: signalSchema,
-        thesisConflict: signalSchema,
-        genreDistance: signalSchema,
+        convergenceLevel: scoreSchema,
+        divergenceIntensity: scoreSchema,
+        framingGap: scoreSchema,
+        supportAsymmetry: scoreSchema,
+        comparability: scoreSchema,
       },
-      required: ["topicOverlap", "thesisConflict", "genreDistance"],
+      required: [
+        "convergenceLevel",
+        "divergenceIntensity",
+        "framingGap",
+        "supportAsymmetry",
+        "comparability",
+      ],
     },
-    commonPoints: {
+    commonGround: {
       type: "array",
       items: { type: "string" },
     },
     divergences: {
       type: "array",
-      items: { type: "string" },
+      items: {
+        type: "object",
+        additionalProperties: false,
+        properties: {
+          theme: { type: "string" },
+          description: { type: "string" },
+          intensity: { type: "string" },
+          evidenceBalance: { type: "string" },
+        },
+        required: ["theme", "description", "intensity", "evidenceBalance"],
+      },
     },
-    framingDifferences: {
-      type: "array",
-      items: { type: "string" },
-    },
-    supportDifferences: {
-      type: "array",
-      items: { type: "string" },
-    },
-    blindSpots: {
+    framingAnalysis: {
       type: "object",
       additionalProperties: false,
       properties: {
-        documentA: {
-          type: "array",
-          items: { type: "string" },
-        },
-        documentB: {
-          type: "array",
-          items: { type: "string" },
-        },
+        documentAFrame: { type: "string" },
+        documentBFrame: { type: "string" },
+        framingGapSummary: { type: "string" },
       },
-      required: ["documentA", "documentB"],
+      required: ["documentAFrame", "documentBFrame", "framingGapSummary"],
     },
-    caveats: {
+    evidenceAnalysis: {
+      type: "object",
+      additionalProperties: false,
+      properties: {
+        documentASupport: { type: "string" },
+        documentBSupport: { type: "string" },
+        asymmetrySummary: { type: "string" },
+      },
+      required: ["documentASupport", "documentBSupport", "asymmetrySummary"],
+    },
+    blindSpots: {
       type: "array",
       items: { type: "string" },
     },
-    recommendations: {
+    reservations: {
       type: "array",
       items: { type: "string" },
+    },
+    auditTrail: {
+      type: "object",
+      additionalProperties: false,
+      properties: {
+        confidenceBoundary: { type: "string" },
+        sourceTrustChain: {
+          type: "array",
+          items: auditSourceSchema,
+        },
+        evidenceAlerts: {
+          type: "array",
+          items: { type: "string" },
+        },
+        comparabilityJudgement: { type: "string" },
+        comparabilityRationale: { type: "string" },
+      },
+      required: [
+        "confidenceBoundary",
+        "sourceTrustChain",
+        "evidenceAlerts",
+        "comparabilityJudgement",
+        "comparabilityRationale",
+      ],
     },
   },
   required: [
     "comparisonProfile",
     "executiveSummary",
     "methodologyNotice",
-    "scoreSignals",
-    "commonPoints",
+    "overallAssessment",
+    "commonGround",
     "divergences",
-    "framingDifferences",
-    "supportDifferences",
+    "framingAnalysis",
+    "evidenceAnalysis",
     "blindSpots",
-    "caveats",
-    "recommendations",
+    "reservations",
+    "auditTrail",
   ],
 } as const;

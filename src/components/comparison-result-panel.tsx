@@ -1,274 +1,275 @@
 "use client";
 
+import { useState } from "react";
 import type { ComparisonResult } from "@/lib/schema";
-import { SectionCard } from "@/components/section-card";
-import { ScoreBadge } from "@/components/score-badge";
 import { ExportReportButton } from "@/components/export-report-button";
-import { ReportTabs, type ReportTabItem } from "@/components/report-tabs";
-import {
-  FileDiff,
-  GitCompareArrows,
-  Layers3,
-  ScanSearch,
-  ShieldAlert,
-} from "lucide-react";
 
-interface ComparisonResultPanelProps {
-  result: ComparisonResult;
+type TabKey =
+  | "resume"
+  | "assessment"
+  | "common"
+  | "divergences"
+  | "audit"
+  | "blindspots";
+
+function tabClass(active: boolean) {
+  return active
+    ? "rounded-2xl border border-white/20 bg-white/10 px-4 py-2 text-sm text-white"
+    : "rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-slate-300 transition hover:bg-white/10";
 }
 
-function ScoreRow({
-  label,
-  score,
-}: {
-  label: string;
-  score: { score: number; label: string; rationale: string };
-}) {
+function scoreTone(score: number) {
+  if (score >= 75) return "text-emerald-200";
+  if (score >= 50) return "text-sky-200";
+  if (score >= 25) return "text-amber-200";
+  return "text-rose-200";
+}
+
+export function ComparisonResultPanel({ result }: { result: ComparisonResult }) {
+  const [tab, setTab] = useState<TabKey>("resume");
+
   return (
-    <div className="rounded-2xl border border-white/10 bg-slate-950/30 p-4">
-      <div className="mb-2 flex items-center justify-between gap-3">
-        <h3 className="text-sm font-medium text-white">{label}</h3>
-        <ScoreBadge score={score.score} label={score.label} />
-      </div>
-      <p className="break-words text-sm leading-6 text-slate-300 [overflow-wrap:anywhere]">
-        {score.rationale}
-      </p>
-    </div>
-  );
-}
-
-export function ComparisonResultPanel({
-  result,
-}: ComparisonResultPanelProps) {
-  const tabs: ReportTabItem[] = [
-    {
-      id: "overview",
-      label: "Résumé",
-      content: (
-        <SectionCard
-          title="Résumé comparatif"
-          icon={<GitCompareArrows className="h-5 w-5" />}
-        >
-          <div className="grid gap-4">
-            <div className="rounded-2xl border border-white/10 bg-slate-950/30 p-4">
-              <p className="break-words text-sm leading-7 text-slate-200 [overflow-wrap:anywhere]">
-                {result.executiveSummary}
-              </p>
-            </div>
-
-            <div className="grid gap-3 md:grid-cols-2">
-              <div className="rounded-2xl border border-white/10 bg-slate-950/30 p-4">
-                <h3 className="mb-2 text-sm font-medium text-white">Document A</h3>
-                <p className="break-words text-sm text-slate-300 [overflow-wrap:anywhere]">
-                  {result.comparisonProfile.documentATitle || "Non fourni"}
-                </p>
-              </div>
-              <div className="rounded-2xl border border-white/10 bg-slate-950/30 p-4">
-                <h3 className="mb-2 text-sm font-medium text-white">Document B</h3>
-                <p className="break-words text-sm text-slate-300 [overflow-wrap:anywhere]">
-                  {result.comparisonProfile.documentBTitle || "Non fourni"}
-                </p>
-              </div>
-            </div>
-
-            <div className="rounded-2xl border border-sky-400/20 bg-sky-400/5 p-4">
-              <h3 className="mb-2 text-sm font-medium text-sky-100">
-                Portée de la comparaison
-              </h3>
-              <p className="break-words text-sm leading-6 text-sky-50/90 [overflow-wrap:anywhere]">
-                {result.comparisonProfile.analysisScope}
-              </p>
-            </div>
-          </div>
-        </SectionCard>
-      ),
-    },
-    {
-      id: "method",
-      label: "Notice",
-      content: (
-        <SectionCard
-          title="Notice méthodologique"
-          icon={<GitCompareArrows className="h-5 w-5" />}
-        >
-          <div className="rounded-2xl border border-white/10 bg-slate-950/30 p-4">
-            <p className="break-words text-sm leading-6 text-slate-300 [overflow-wrap:anywhere]">
-              {result.methodologyNotice}
+    <section
+      id="comparison-report"
+      className="report-content rounded-3xl border border-white/10 bg-white/5 p-5 shadow-xl backdrop-blur md:p-6"
+    >
+      <div className="flex flex-col gap-5">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <h2 className="text-2xl font-semibold tracking-tight text-white">
+              Rapport de comparaison
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-slate-300">
+              {result.comparisonProfile.documentATitle || "Document A"} vs{" "}
+              {result.comparisonProfile.documentBTitle || "Document B"}
+            </p>
+            <p className="text-xs text-slate-400">
+              Types : {result.comparisonProfile.documentAType || "non précisé"} /{" "}
+              {result.comparisonProfile.documentBType || "non précisé"}
             </p>
           </div>
-        </SectionCard>
-      ),
-    },
-    {
-      id: "scores",
-      label: "Évaluation",
-      content: (
-        <SectionCard title="Évaluation globale" icon={<Layers3 className="h-5 w-5" />}>
-          <div className="grid gap-3 md:grid-cols-2">
-            <ScoreRow
-              label="Niveau de convergence"
-              score={result.overallAssessment.convergenceLevel}
-            />
-            <ScoreRow
-              label="Intensité des divergences"
-              score={result.overallAssessment.divergenceIntensity}
-            />
-            <ScoreRow
-              label="Écart de cadrage"
-              score={result.overallAssessment.framingGap}
-            />
-            <ScoreRow
-              label="Asymétrie d’étayage"
-              score={result.overallAssessment.supportAsymmetry}
-            />
-            <ScoreRow
-              label="Comparabilité"
-              score={result.overallAssessment.comparability}
+
+          <div data-no-print>
+            <ExportReportButton
+              targetId="comparison-report"
+              filename={`source-critic-comparaison-${(result.comparisonProfile.documentATitle || "document-a")
+                .toLowerCase()
+                .replace(/[^a-z0-9]+/gi, "-")}-vs-${(result.comparisonProfile.documentBTitle || "document-b")
+                .toLowerCase()
+                .replace(/[^a-z0-9]+/gi, "-")}`}
+              label="Exporter"
             />
           </div>
-        </SectionCard>
-      ),
-    },
-    {
-      id: "common",
-      label: "Points communs",
-      content: (
-        <SectionCard title="Points communs" icon={<FileDiff className="h-5 w-5" />}>
-          <ul className="space-y-2 text-sm leading-6 text-slate-300">
-            {result.commonPoints.map((item, index) => (
-              <li key={index} className="break-words [overflow-wrap:anywhere]">
-                • {item}
-              </li>
+        </div>
+
+        <div className="flex flex-wrap gap-3" data-no-print>
+          <button type="button" onClick={() => setTab("resume")} className={tabClass(tab === "resume")}>
+            Résumé
+          </button>
+          <button type="button" onClick={() => setTab("assessment")} className={tabClass(tab === "assessment")}>
+            Évaluation
+          </button>
+          <button type="button" onClick={() => setTab("common")} className={tabClass(tab === "common")}>
+            Points communs
+          </button>
+          <button type="button" onClick={() => setTab("divergences")} className={tabClass(tab === "divergences")}>
+            Divergences
+          </button>
+          <button type="button" onClick={() => setTab("audit")} className={tabClass(tab === "audit")}>
+            Audit
+          </button>
+          <button type="button" onClick={() => setTab("blindspots")} className={tabClass(tab === "blindspots")}>
+            Angles morts
+          </button>
+        </div>
+
+        {tab === "resume" ? (
+          <div className="grid gap-4">
+            <div className="rounded-2xl border border-white/10 bg-slate-950/20 p-4">
+              <h3 className="text-sm font-semibold text-white">Résumé exécutif</h3>
+              <p className="mt-3 text-sm leading-7 text-slate-300">{result.executiveSummary}</p>
+            </div>
+
+            <div className="rounded-2xl border border-white/10 bg-slate-950/20 p-4">
+              <h3 className="text-sm font-semibold text-white">Notice méthodologique</h3>
+              <p className="mt-3 text-sm leading-7 text-slate-300">{result.methodologyNotice}</p>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="rounded-2xl border border-white/10 bg-slate-950/20 p-4">
+                <h3 className="text-sm font-semibold text-white">Cadrage du document A</h3>
+                <p className="mt-3 text-sm leading-6 text-slate-300">
+                  {result.framingAnalysis.documentAFrame}
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-white/10 bg-slate-950/20 p-4">
+                <h3 className="text-sm font-semibold text-white">Cadrage du document B</h3>
+                <p className="mt-3 text-sm leading-6 text-slate-300">
+                  {result.framingAnalysis.documentBFrame}
+                </p>
+              </div>
+            </div>
+          </div>
+        ) : null}
+
+        {tab === "assessment" ? (
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {Object.entries(result.overallAssessment).map(([key, score]) => (
+              <div key={key} className="rounded-2xl border border-white/10 bg-slate-950/20 p-4">
+                <p className="text-xs uppercase tracking-wide text-slate-400">{key}</p>
+                <p className={`mt-2 text-2xl font-semibold ${scoreTone(score.score)}`}>
+                  {score.score}/100
+                </p>
+                <p className="mt-1 text-sm text-slate-200">{score.label}</p>
+                <p className="mt-3 text-sm leading-6 text-slate-300">{score.rationale}</p>
+              </div>
             ))}
-          </ul>
-        </SectionCard>
-      ),
-    },
-    {
-      id: "divergences",
-      label: "Divergences",
-      content: (
-        <SectionCard title="Divergences" icon={<FileDiff className="h-5 w-5" />}>
-          <ul className="space-y-2 text-sm leading-6 text-slate-300">
+          </div>
+        ) : null}
+
+        {tab === "common" ? (
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="rounded-2xl border border-white/10 bg-slate-950/20 p-4 md:col-span-2">
+              <h3 className="text-sm font-semibold text-white">Points communs</h3>
+              <ul className="mt-3 grid gap-2 text-sm leading-6 text-slate-300">
+                {result.commonGround.map((item, index) => (
+                  <li key={index}>• {item}</li>
+                ))}
+              </ul>
+            </div>
+
+            <div className="rounded-2xl border border-white/10 bg-slate-950/20 p-4">
+              <h3 className="text-sm font-semibold text-white">Écart de cadrage</h3>
+              <p className="mt-3 text-sm leading-6 text-slate-300">
+                {result.framingAnalysis.framingGapSummary}
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-white/10 bg-slate-950/20 p-4">
+              <h3 className="text-sm font-semibold text-white">Asymétrie d’étayage</h3>
+              <p className="mt-3 text-sm leading-6 text-slate-300">
+                {result.evidenceAnalysis.asymmetrySummary}
+              </p>
+            </div>
+          </div>
+        ) : null}
+
+        {tab === "divergences" ? (
+          <div className="grid gap-4">
             {result.divergences.map((item, index) => (
-              <li key={index} className="break-words [overflow-wrap:anywhere]">
-                • {item}
-              </li>
+              <div key={index} className="rounded-2xl border border-white/10 bg-slate-950/20 p-4">
+                <div className="flex flex-wrap gap-2">
+                  <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-xs text-slate-200">
+                    {item.theme}
+                  </span>
+                  <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-xs text-slate-200">
+                    intensité {item.intensity}
+                  </span>
+                </div>
+                <p className="mt-3 text-sm leading-6 text-slate-300">{item.description}</p>
+                <div className="mt-3 rounded-2xl border border-white/10 bg-white/5 p-3">
+                  <p className="text-xs uppercase tracking-wide text-slate-400">Équilibre d’étayage</p>
+                  <p className="mt-2 text-sm leading-6 text-slate-300">{item.evidenceBalance}</p>
+                </div>
+              </div>
             ))}
-          </ul>
-        </SectionCard>
-      ),
-    },
-    {
-      id: "framing",
-      label: "Cadrage / étayage",
-      content: (
-        <div className="grid gap-6 md:grid-cols-2">
-          <SectionCard
-            title="Différences de cadrage"
-            icon={<ScanSearch className="h-5 w-5" />}
-          >
-            <ul className="space-y-2 text-sm leading-6 text-slate-300">
-              {result.framingDifferences.map((item, index) => (
-                <li key={index} className="break-words [overflow-wrap:anywhere]">
-                  • {item}
-                </li>
-              ))}
-            </ul>
-          </SectionCard>
+          </div>
+        ) : null}
 
-          <SectionCard
-            title="Différences d’étayage"
-            icon={<ScanSearch className="h-5 w-5" />}
-          >
-            <ul className="space-y-2 text-sm leading-6 text-slate-300">
-              {result.supportDifferences.map((item, index) => (
-                <li key={index} className="break-words [overflow-wrap:anywhere]">
-                  • {item}
-                </li>
-              ))}
-            </ul>
-          </SectionCard>
-        </div>
-      ),
-    },
-    {
-      id: "limits",
-      label: "Angles morts",
-      content: (
-        <div className="grid gap-6 md:grid-cols-2">
-          <SectionCard
-            title="Angles morts du document A"
-            icon={<ShieldAlert className="h-5 w-5" />}
-          >
-            <ul className="space-y-2 text-sm leading-6 text-slate-300">
-              {result.blindSpots.documentA.map((item, index) => (
-                <li key={index} className="break-words [overflow-wrap:anywhere]">
-                  • {item}
-                </li>
-              ))}
-            </ul>
-          </SectionCard>
+        {tab === "audit" ? (
+          <div className="grid gap-4">
+            <div className="rounded-2xl border border-white/10 bg-slate-950/20 p-4">
+              <h3 className="text-sm font-semibold text-white">Frontière de confiance</h3>
+              <p className="mt-3 text-sm leading-7 text-slate-300">
+                {result.auditTrail.confidenceBoundary}
+              </p>
+            </div>
 
-          <SectionCard
-            title="Angles morts du document B"
-            icon={<ShieldAlert className="h-5 w-5" />}
-          >
-            <ul className="space-y-2 text-sm leading-6 text-slate-300">
-              {result.blindSpots.documentB.map((item, index) => (
-                <li key={index} className="break-words [overflow-wrap:anywhere]">
-                  • {item}
-                </li>
-              ))}
-            </ul>
-          </SectionCard>
-        </div>
-      ),
-    },
-    {
-      id: "recommendations",
-      label: "Réserves",
-      content: (
-        <div className="grid gap-6 md:grid-cols-2">
-          <SectionCard title="Réserves" icon={<ShieldAlert className="h-5 w-5" />}>
-            <ul className="space-y-2 text-sm leading-6 text-slate-300">
-              {result.caveats.map((item, index) => (
-                <li key={index} className="break-words [overflow-wrap:anywhere]">
-                  • {item}
-                </li>
-              ))}
-            </ul>
-          </SectionCard>
+            <div className="grid gap-4 lg:grid-cols-2">
+              <div className="rounded-2xl border border-white/10 bg-slate-950/20 p-4">
+                <h3 className="text-sm font-semibold text-white">Chaîne de confiance des sources</h3>
+                {result.auditTrail.sourceTrustChain.length === 0 ? (
+                  <p className="mt-3 text-sm leading-6 text-slate-300">
+                    Aucune chaîne de confiance exploitable n’a été restituée pour ce run.
+                  </p>
+                ) : (
+                  <div className="mt-3 grid gap-3">
+                    {result.auditTrail.sourceTrustChain.map((item, index) => (
+                      <div key={index} className="rounded-2xl border border-white/10 bg-white/5 p-3">
+                        <div className="flex flex-wrap gap-2">
+                          <span className="rounded-full border border-white/10 bg-slate-900 px-2 py-1 text-xs text-slate-200">
+                            {item.sourceType}
+                          </span>
+                          <span className="rounded-full border border-white/10 bg-slate-900 px-2 py-1 text-xs text-slate-200">
+                            fiabilité {item.reliability}
+                          </span>
+                          {item.domain ? (
+                            <span className="rounded-full border border-white/10 bg-slate-900 px-2 py-1 text-xs text-slate-200">
+                              {item.domain}
+                            </span>
+                          ) : null}
+                        </div>
+                        <p className="mt-3 text-sm font-medium text-white">{item.title}</p>
+                        <p className="mt-2 text-sm leading-6 text-slate-300">{item.rationale}</p>
+                        {item.url ? (
+                          <a
+                            href={item.url}
+                            target="_blank"
+                            rel="noreferrer noopener"
+                            className="mt-3 inline-block break-all text-sm text-sky-200 underline"
+                          >
+                            {item.url}
+                          </a>
+                        ) : null}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
 
-          <SectionCard
-            title="Recommandations de lecture"
-            icon={<ShieldAlert className="h-5 w-5" />}
-          >
-            <ul className="space-y-2 text-sm leading-6 text-slate-300">
-              {result.recommendations.map((item, index) => (
-                <li key={index} className="break-words [overflow-wrap:anywhere]">
-                  • {item}
-                </li>
-              ))}
-            </ul>
-          </SectionCard>
-        </div>
-      ),
-    },
-  ];
+              <div className="rounded-2xl border border-white/10 bg-slate-950/20 p-4">
+                <h3 className="text-sm font-semibold text-white">Audit de comparabilité</h3>
+                <p className="mt-3 text-sm text-slate-200">
+                  Jugement : {result.auditTrail.comparabilityJudgement}
+                </p>
+                <p className="mt-3 text-sm leading-6 text-slate-300">
+                  {result.auditTrail.comparabilityRationale}
+                </p>
 
-  return (
-    <div className="grid gap-6">
-      <div className="flex justify-end" data-no-print>
-        <ExportReportButton
-          targetId="comparison-report-export"
-          fileTitle="rapport-comparatif"
-        />
+                <h4 className="mt-5 text-sm font-semibold text-white">Alertes d’étayage</h4>
+                <ul className="mt-3 grid gap-2 text-sm leading-6 text-slate-300">
+                  {result.auditTrail.evidenceAlerts.map((item, index) => (
+                    <li key={index}>• {item}</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </div>
+        ) : null}
+
+        {tab === "blindspots" ? (
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="rounded-2xl border border-white/10 bg-slate-950/20 p-4">
+              <h3 className="text-sm font-semibold text-white">Angles morts</h3>
+              <ul className="mt-3 grid gap-2 text-sm leading-6 text-slate-300">
+                {result.blindSpots.map((item, index) => (
+                  <li key={index}>• {item}</li>
+                ))}
+              </ul>
+            </div>
+
+            <div className="rounded-2xl border border-white/10 bg-slate-950/20 p-4">
+              <h3 className="text-sm font-semibold text-white">Réserves</h3>
+              <ul className="mt-3 grid gap-2 text-sm leading-6 text-slate-300">
+                {result.reservations.map((item, index) => (
+                  <li key={index}>• {item}</li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        ) : null}
       </div>
-
-      <div id="comparison-report-export" className="report-content grid gap-6">
-        <ReportTabs tabs={tabs} />
-      </div>
-    </div>
+    </section>
   );
 }

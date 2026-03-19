@@ -1,5 +1,6 @@
 import { BadgeInfo, Mail, ShieldCheck, UserCircle2 } from "lucide-react";
 import { requireUser } from "@/lib/auth-helpers";
+import { getOrCreateUserPreference } from "@/lib/user-preferences";
 
 function InfoCard({
   title,
@@ -21,6 +22,7 @@ function InfoCard({
 
 export default async function ProfilePage() {
   const user = await requireUser();
+  const preference = await getOrCreateUserPreference(user.id);
 
   return (
     <main className="min-h-screen bg-transparent px-4 py-8 md:px-8">
@@ -60,6 +62,42 @@ export default async function ProfilePage() {
           />
         </section>
 
+        <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <InfoCard
+            title="Mode par défaut"
+            value={
+              preference.defaultMode === "external_research"
+                ? "Recherche externe encadrée"
+                : "Lecture interne"
+            }
+            helper="Préférence actuellement enregistrée pour vos nouveaux runs."
+          />
+          <InfoCard
+            title="Profil d’analyse"
+            value={
+              preference.analysisProfile === "academic"
+                ? "Académique"
+                : preference.analysisProfile === "media"
+                  ? "Médiatique"
+                  : preference.analysisProfile === "institutional"
+                    ? "Institutionnel"
+                    : "Géopolitique"
+            }
+            helper="Profil métier par défaut de votre compte."
+          />
+          <InfoCard
+            title="Politique de sources"
+            value={
+              preference.sourcePolicy === "strict_reliable"
+                ? "Strict fiable"
+                : preference.sourcePolicy === "broad"
+                  ? "Large"
+                  : "Équilibré"
+            }
+            helper="Niveau d’ouverture documentaire souhaité."
+          />
+        </section>
+
         <section className="rounded-3xl border border-white/10 bg-white/5 p-5 shadow-xl backdrop-blur md:p-6">
           <div className="grid gap-4 md:grid-cols-3">
             <div className="rounded-2xl border border-white/10 bg-slate-950/20 p-4">
@@ -68,7 +106,7 @@ export default async function ProfilePage() {
                 <h2 className="text-sm font-semibold text-white">Compte</h2>
               </div>
               <p className="text-sm leading-6 text-slate-300">
-                Espace prêt pour les futures modifications de profil.
+                L’utilisateur dispose désormais d’un vrai profil et de préférences persistées.
               </p>
             </div>
 
@@ -78,7 +116,7 @@ export default async function ProfilePage() {
                 <h2 className="text-sm font-semibold text-white">Sécurité</h2>
               </div>
               <p className="text-sm leading-6 text-slate-300">
-                Sessions réelles actives via Auth.js et base utilisateur Prisma.
+                Authentification réelle active. Les routes privées sont protégées.
               </p>
             </div>
 
@@ -88,7 +126,7 @@ export default async function ProfilePage() {
                 <h2 className="text-sm font-semibold text-white">Préférences</h2>
               </div>
               <p className="text-sm leading-6 text-slate-300">
-                Les préférences utilisateur détaillées viendront au release suivant.
+                Les réglages utilisateur servent maintenant de base au comportement produit.
               </p>
             </div>
           </div>

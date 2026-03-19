@@ -6,6 +6,7 @@ import {
   Gauge,
   Home,
   FileSearch2,
+  FolderKanban,
   GitCompareArrows,
   History,
   Settings,
@@ -46,6 +47,11 @@ export function ProductNav() {
       <Link href="/history" className={itemClass(pathname === "/history")}>
         <History className="h-4 w-4" />
         Historique
+      </Link>
+
+      <Link href="/workspaces" className={itemClass(pathname === "/workspaces")}>
+        <FolderKanban className="h-4 w-4" />
+        Espaces
       </Link>
 
       <Link href="/profile" className={itemClass(pathname === "/profile")}>
