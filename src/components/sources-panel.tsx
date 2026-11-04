@@ -94,6 +94,38 @@ function sortSources(sources: ExternalSourceItem[]) {
   });
 }
 
+function getVerificationBadge(source: ExternalSourceItem) {
+  const status = source.verification?.status;
+  if (!status) return null;
+
+  switch (status) {
+    case "extrait_verifie":
+      return (
+        <span className="inline-flex items-center rounded-full border border-emerald-400/30 bg-emerald-400/10 px-2.5 py-1 text-[11px] font-medium text-emerald-200">
+          Extrait vérifié dans la page
+        </span>
+      );
+    case "extrait_non_trouve":
+      return (
+        <span className="inline-flex items-center rounded-full border border-amber-400/30 bg-amber-400/10 px-2.5 py-1 text-[11px] font-medium text-amber-200">
+          Extrait non retrouvé dans la page
+        </span>
+      );
+    case "page_inaccessible":
+      return (
+        <span className="inline-flex items-center rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[11px] font-medium text-slate-300">
+          Page inaccessible
+        </span>
+      );
+    default:
+      return (
+        <span className="inline-flex items-center rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[11px] font-medium text-slate-300">
+          Contenu non vérifiable
+        </span>
+      );
+  }
+}
+
 export function SourcesPanel({ sources }: SourcesPanelProps) {
   if (!sources.length) return null;
 
@@ -140,6 +172,8 @@ export function SourcesPanel({ sources }: SourcesPanelProps) {
                     >
                       {trusted ? "Source prioritaire" : "Source secondaire"}
                     </span>
+
+                    {getVerificationBadge(source)}
                   </div>
 
                   <a

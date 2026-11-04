@@ -70,8 +70,31 @@ function normalizeSources(value: unknown): ExternalSourceItem[] {
       url: typeof item.url === "string" ? item.url : "",
       snippet: typeof item.snippet === "string" ? item.snippet : "",
       domain: typeof item.domain === "string" ? item.domain : "",
+      verification:
+        item.verification && typeof item.verification === "object"
+          ? normalizeVerification(
+              item.verification as Record<string, unknown>,
+            )
+          : undefined,
     }))
     .filter((item) => item.url.trim().length > 0);
+}
+
+function normalizeVerification(value: Record<string, unknown>) {
+  const status = typeof value.status === "string" ? value.status : "";
+  const known = [
+    "extrait_verifie",
+    "extrait_non_trouve",
+    "page_inaccessible",
+    "contenu_non_verifiable",
+  ] as const;
+
+  if (!known.includes(status as (typeof known)[number])) return undefined;
+
+  return {
+    status: status as (typeof known)[number],
+    checkedAt: typeof value.checkedAt === "string" ? value.checkedAt : "",
+  };
 }
 
 function mapDbEntry(entry: {

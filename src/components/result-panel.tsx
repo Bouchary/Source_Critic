@@ -42,6 +42,7 @@ export function ResultPanel({ result }: { result: AnalysisResult }) {
         basis: string;
         grounding?: "verifie" | "partiel" | "non_verifiable";
         sourceUrls?: string[];
+        passageVerified?: boolean;
       }
     >();
     for (const item of result.auditTrail.claimAudit) {
@@ -50,6 +51,7 @@ export function ResultPanel({ result }: { result: AnalysisResult }) {
         basis: item.basis,
         grounding: item.grounding,
         sourceUrls: item.sourceUrls,
+        passageVerified: item.passageVerified,
       });
     }
     return map;
@@ -181,10 +183,9 @@ export function ResultPanel({ result }: { result: AnalysisResult }) {
                     ) : null}
                     {audit?.grounding === "verifie" ? (
                       <span className="rounded-full border border-emerald-400/20 bg-emerald-400/10 px-2.5 py-1 text-xs text-emerald-200">
-                        étayage vérifié
-                        {audit.sourceUrls && audit.sourceUrls.length > 0
-                          ? ` · ${audit.sourceUrls.length} source${audit.sourceUrls.length > 1 ? "s" : ""}`
-                          : ""}
+                        {audit.passageVerified
+                          ? "étayage vérifié · extrait confirmé dans la page"
+                          : `étayage vérifié${audit.sourceUrls && audit.sourceUrls.length > 0 ? ` · ${audit.sourceUrls.length} source${audit.sourceUrls.length > 1 ? "s" : ""}` : ""}`}
                       </span>
                     ) : audit?.grounding === "partiel" ? (
                       <span className="rounded-full border border-amber-400/20 bg-amber-400/10 px-2.5 py-1 text-xs text-amber-200">

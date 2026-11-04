@@ -5,17 +5,27 @@ import type { ExternalSourceItem } from "@/lib/schema";
 export type ClaimGrounding = "verifie" | "partiel" | "non_verifiable";
 
 /**
- * Construit l'ensemble des clés canoniques des URLs réellement
- * retournées par la recherche web. Tout URL citée par le modèle qui
- * n'est pas dans cet ensemble est potentiellement une hallucination.
+ * Indexe les sources de recherche par clé canonique d'URL. Tout URL citée
+ * par le modèle qui n'est pas dans cet index est potentiellement une
+ * hallucination.
  */
-function buildSearchKeySet(sources: ExternalSourceItem[]) {
-  const keys = new Set<string>();
+function buildSearchKeyMap(sources: ExternalSourceItem[]) {
+  const map = new Map<string, ExternalSourceItem>();
   for (const source of sources) {
     const key = canonicalUrlKey(source.url);
-    if (key) keys.add(key);
+    if (key) map.set(key, source);
   }
-  return keys;
+  return map;
+}
+
+function hasVerifiedPassage(
+  urls: string[],
+  searchMap: Map<string, ExternalSourceItem>,
+) {
+  return urls.some((url) => {
+    const source = searchMap.get(canonicalUrlKey(url));
+    return source?.verification?.status === "extrait_verifie";
+  });
 }
 
 function normalizeUrlList(value: unknown): string[] {
@@ -36,12 +46,12 @@ export function crossCheckTrustChain(
   items: AuditSourceChainItem[],
   sources: ExternalSourceItem[],
 ): AuditSourceChainItem[] {
-  const searchKeys = buildSearchKeySet(sources);
+  const searchMap = buildSearchKeyMap(sources);
 
   return items.map((item) => {
     if (!item.url) return { ...item };
 
-    const found = searchKeys.has(canonicalUrlKey(item.url));
+    const found = searchMap.has(canonicalUrlKey(item.url));
     return { ...item, verifiedInSearch: found };
   });
 }
@@ -53,7 +63,9 @@ export function crossCheckTrustChain(
  * - un statut d'étayage :
  *   - "verifie" : au moins une URL citée figure dans les résultats de recherche,
  *   - "partiel" : des URLs sont citées mais aucune n'a été retrouvée,
- *   - "non_verifiable" : aucune URL citée (ou pas de recherche externe).
+ *   - "non_verifiable" : aucune URL citée (ou pas de recherche externe),
+ * - passageVerified : true si l'extrait d'au moins une source citée a été
+ *   confirmé dans le contenu de la page (vérification au niveau du passage).
  */
 export function attachClaimGrounding(
   claimAudit: {
@@ -64,11 +76,13 @@ export function attachClaimGrounding(
   }[],
   sources: ExternalSourceItem[],
 ): ClaimAuditItem[] {
-  const searchKeys = buildSearchKeySet(sources);
+  const searchMap = buildSearchKeyMap(sources);
 
   return claimAudit.map((item) => {
     const cited = normalizeUrlList(item.sourceUrls);
-    const matched = cited.filter((url) => searchKeys.has(canonicalUrlKey(url)));
+    const matched = cited.filter((url) =>
+      searchMap.has(canonicalUrlKey(url)),
+    );
 
     let grounding: ClaimGrounding;
     if (cited.length === 0) {
@@ -85,6 +99,9 @@ export function attachClaimGrounding(
       basis: item.basis,
       sourceUrls: matched,
       grounding,
+      ...(grounding === "verifie"
+        ? { passageVerified: hasVerifiedPassage(matched, searchMap) }
+        : {}),
     };
   });
 }

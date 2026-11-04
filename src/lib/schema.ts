@@ -3,11 +3,28 @@ import { z } from "zod";
 export const analysisModeSchema = z.enum(["internal_only", "external_research"]);
 export type AnalysisMode = z.infer<typeof analysisModeSchema>;
 
+export const sourceVerificationStatusSchema = z.enum([
+  "extrait_verifie",
+  "extrait_non_trouve",
+  "page_inaccessible",
+  "contenu_non_verifiable",
+]);
+export type SourceVerificationStatus = z.infer<
+  typeof sourceVerificationStatusSchema
+>;
+
+export const sourceVerificationSchema = z.object({
+  status: sourceVerificationStatusSchema,
+  checkedAt: z.string(),
+});
+export type SourceVerification = z.infer<typeof sourceVerificationSchema>;
+
 export const externalSourceItemSchema = z.object({
   title: z.string(),
   url: z.string(),
   snippet: z.string().optional().default(""),
   domain: z.string().optional().default(""),
+  verification: sourceVerificationSchema.optional(),
 });
 export type ExternalSourceItem = z.infer<typeof externalSourceItemSchema>;
 
@@ -65,6 +82,11 @@ export interface ClaimAuditItem {
   sourceUrls?: string[];
   /** Statut d'étayage calculé côté application à partir des résultats de recherche. */
   grounding?: "verifie" | "partiel" | "non_verifiable";
+  /**
+   * true si l'extrait d'au moins une des sources citées a été retrouvé
+   * dans le contenu de la page correspondante (vérification au niveau du passage).
+   */
+  passageVerified?: boolean;
 }
 
 export interface AnalysisResult {
