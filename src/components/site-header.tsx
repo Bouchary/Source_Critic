@@ -1,57 +1,80 @@
 import Link from "next/link";
-import { ShieldCheck } from "lucide-react";
+import {
+  LogIn,
+  LogOut,
+  Settings,
+  UserCircle2,
+} from "lucide-react";
+import { auth } from "@/auth";
 import { ProductNav } from "@/components/product-nav";
-import { getOptionalUser } from "@/lib/auth-helpers";
 import { SignOutButton } from "@/components/sign-out-button";
 
+function iconButtonClass() {
+  return "inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-slate-200 transition hover:bg-white/10";
+}
+
 export async function SiteHeader() {
-  const user = await getOptionalUser();
+  const session = await auth();
+  const isAuthenticated = !!session?.user;
 
   return (
-    <header className="sticky top-0 z-50 border-b border-white/10 bg-slate-950/90 backdrop-blur-xl">
+    <header className="sticky top-0 z-40 border-b border-white/10 bg-slate-950/75 backdrop-blur">
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 px-4 py-4 md:px-8">
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <Link href="/" className="flex items-center gap-3">
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-3">
-              <ShieldCheck className="h-5 w-5 text-slate-100" />
-            </div>
+        <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+          <div className="flex min-w-0 items-center gap-4">
+            <Link href="/" className="shrink-0">
+              <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-2">
+                <p className="text-sm font-semibold tracking-wide text-white">
+                  Source Critic
+                </p>
+              </div>
+            </Link>
 
-            <div>
-              <p className="text-lg font-semibold tracking-tight text-white">
-                Source Critic
-              </p>
-              <p className="text-xs text-slate-400">
-                Analyse critique, comparaison, traçabilité
+            <div className="min-w-0">
+              <p className="truncate text-sm text-slate-300">
+                Analyse critique, comparaison structurée et travail rejouable
               </p>
             </div>
-          </Link>
+          </div>
 
-          <div className="flex items-center gap-3">
-            {user ? (
+          <div className="flex flex-wrap items-center gap-3" data-no-print>
+            {isAuthenticated ? (
               <>
-                <div className="text-right">
-                  <p className="text-sm text-slate-200">
-                    {user.name || "Utilisateur"}
-                  </p>
-                  <p className="text-xs text-slate-400">
-                    {user.email || "Session active"}
-                  </p>
-                </div>
+                <Link
+                  href="/profile"
+                  className={iconButtonClass()}
+                  aria-label="Profil"
+                  title="Profil"
+                >
+                  <UserCircle2 className="h-5 w-5" />
+                </Link>
+
+                <Link
+                  href="/settings"
+                  className={iconButtonClass()}
+                  aria-label="Paramètres"
+                  title="Paramètres"
+                >
+                  <Settings className="h-5 w-5" />
+                </Link>
+
                 <SignOutButton />
               </>
             ) : (
               <>
                 <Link
                   href="/login"
-                  className="rounded-2xl border border-white/10 bg-slate-800 px-4 py-2 text-sm font-medium text-slate-100 transition hover:bg-slate-700"
+                  className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-slate-200 transition hover:bg-white/10"
                 >
+                  <LogIn className="h-4 w-4" />
                   Connexion
                 </Link>
+
                 <Link
                   href="/signup"
-                  className="rounded-2xl border border-white/10 bg-slate-800 px-4 py-2 text-sm font-medium text-slate-100 transition hover:bg-slate-700"
+                  className="inline-flex items-center gap-2 rounded-2xl border border-slate-700 bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800"
                 >
-                  Inscription
+                  Créer un compte
                 </Link>
               </>
             )}

@@ -3,14 +3,14 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Gauge,
-  Home,
   FileSearch2,
   FolderKanban,
   GitCompareArrows,
   History,
-  Settings,
-  UserCircle2,
+  Home,
+  LayoutPanelTop,
+  ScrollText,
+  Target,
 } from "lucide-react";
 
 function itemClass(active: boolean) {
@@ -29,9 +29,19 @@ export function ProductNav() {
         Accueil
       </Link>
 
-      <Link href="/dashboard" className={itemClass(pathname === "/dashboard")}>
-        <Gauge className="h-4 w-4" />
-        Dashboard
+      <Link href="/product" className={itemClass(pathname === "/product")}>
+        <LayoutPanelTop className="h-4 w-4" />
+        Produit
+      </Link>
+
+      <Link href="/method" className={itemClass(pathname === "/method")}>
+        <ScrollText className="h-4 w-4" />
+        Méthode
+      </Link>
+
+      <Link href="/use-cases" className={itemClass(pathname === "/use-cases")}>
+        <Target className="h-4 w-4" />
+        Cas d’usage
       </Link>
 
       <Link href="/analyze" className={itemClass(pathname === "/analyze")}>
@@ -52,16 +62,6 @@ export function ProductNav() {
       <Link href="/workspaces" className={itemClass(pathname === "/workspaces")}>
         <FolderKanban className="h-4 w-4" />
         Espaces
-      </Link>
-
-      <Link href="/profile" className={itemClass(pathname === "/profile")}>
-        <UserCircle2 className="h-4 w-4" />
-        Profil
-      </Link>
-
-      <Link href="/settings" className={itemClass(pathname === "/settings")}>
-        <Settings className="h-4 w-4" />
-        Paramètres
       </Link>
     </nav>
   );
