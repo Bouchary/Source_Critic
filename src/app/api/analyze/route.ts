@@ -17,6 +17,10 @@ import {
   buildDeterministicAnalysisResult,
   type AnalysisModelOutput,
 } from "@/lib/analyze-scoring";
+import {
+  collectCitedUrls,
+  verifySourcePassages,
+} from "@/lib/passage-verification";
 import { auth } from "@/auth";
 
 export const runtime = "nodejs";
@@ -52,12 +56,18 @@ export async function POST(req: Request) {
           name: "source_critic_analysis_v37",
         });
 
+      const citedUrls = collectCitedUrls(externalResponse.result);
+      const verifiedSources = await verifySourcePassages(
+        externalResponse.sources,
+        citedUrls,
+      );
+
       result = buildDeterministicAnalysisResult(
         externalResponse.result,
         payload,
-        externalResponse.sources,
+        verifiedSources,
       );
-      sources = externalResponse.sources;
+      sources = verifiedSources;
     } else {
       const response = await openai.responses.create({
         model: process.env.OPENAI_MODEL || "gpt-5",

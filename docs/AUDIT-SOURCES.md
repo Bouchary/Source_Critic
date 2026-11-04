@@ -104,11 +104,36 @@ domaines, et distinction des sources concordantes/divergentes.
    badge « présente / non retrouvée dans la recherche » dans la chaîne de confiance.
 8. Nettoyage des BOM UTF-8.
 
+## PR « Vérification des extraits dans les pages citées »
+
+Nouveau module `src/lib/passage-verification.ts` : pour les sources externes
+(priorité à celles citées par le modèle, plafond de 8 pages par analyse) :
+
+1. **fetch sécurisé** de la page citée : timeout 10 s, taille plafonnée
+   (2 Mo), User-Agent dédié, garde SSRF (protocole http/https uniquement,
+   hôtes locaux et plages privées bloqués) ;
+2. **extraction du texte** de la page (scripts, styles, commentaires et
+   balises retirés, entités HTML décodées) ;
+3. **contrôle que l'extrait** retourné par la recherche figure bien dans la
+   page (comparaison normalisée : accents, casse, ponctuation, espaces ; les
+   fragments d'extrait de moins de 25 caractères ne sont pas comparables) ;
+4. statut par source : `extrait_verifie`, `extrait_non_trouve`,
+   `page_inaccessible` ou `contenu_non_verifiable`, avec cache en mémoire
+   (1 h) pour éviter de re-fetcher les mêmes URLs ;
+5. propagation jusqu'aux claims : un claim dont une source citée a un extrait
+   confirmé reçoit `passageVerified: true` (badge « extrait confirmé dans la
+   page » dans le rapport).
+
+Limites connues de cette première version : contenu rendu uniquement en
+JavaScript non évalué (le texte n'est pas dans le HTML brut), pages derrière
+paywall ou connexion, comparaison lexicale (pas sémantique). La vérification
+s'applique pour l'instant à la route `/api/analyze` (la comparaison de
+documents peut suivre le même schéma).
+
 ## Roadmap proposée (par ordre de priorité)
 
-1. **Vérification au niveau du passage** : fetch des URLs citées, extraction du
-   texte de la page, et contrôle que l'extrait avancé s'y trouve réellement
-   (c'est l'étape qui transforme la citation en preuve).
+1. **Vérification au niveau du passage** : ~~implémentée~~ (voir ci-dessus) ;
+   étendre au rendu JavaScript (navigateur headless) et à la route `/api/compare`.
 2. **Scoring qualité des sources** : autorité du domaine, fraîcheur, type
    primaire/secondaire, diversité, concordance.
 3. **Requêtes ciblées par claim** : générer une requête de recherche par claim

@@ -149,6 +149,7 @@ dont le timeout est suffisant.
 
 - Les marqueurs textuels des scores sont exclusivement francophones et non
   normalisés par la longueur du document.
-- La vérification des sources se fait au niveau de l'URL ; la vérification que
-  l'extrait cité figure bien dans la page source est une évolution prévue
-  (voir `docs/AUDIT-SOURCES.md`).
+- La vérification des extraits dans les pages citées (fetch + comparaison
+  normalisée) porte sur au maximum 8 sources par analyse ; elle ne couvre pas
+  le contenu rendu uniquement par JavaScript ni les pages derrière paywall,
+  et la comparaison est lexicale (voir `docs/AUDIT-SOURCES.md`).
