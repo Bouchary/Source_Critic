@@ -130,12 +130,35 @@ paywall ou connexion, comparaison lexicale (pas sémantique). La vérification
 s'applique pour l'instant à la route `/api/analyze` (la comparaison de
 documents peut suivre le même schéma).
 
+## PR « Scoring de qualité des sources »
+
+Nouveau module `src/lib/source-scoring.ts` : chaque source externe reçoit un
+score composite 0-100, explicable critère par critère :
+
+1. **catégorie du domaine** : institutionnel/officiel/scientifique (base 45,
+   type primaire), média de référence (35, secondaire), encyclopédie (25,
+   tertiaire), plateforme/réseau/blog (15, tertiaire), non répertorié (30) ;
+2. **vérification de l'extrait** : confirmé dans la page +15, non retrouvé -10,
+   page inaccessible -5 ;
+3. **corroboration** : source citée par 1 claim +10, par 2 claims ou plus +15 ;
+4. **fraîcheur** : année détectée dans l'extrait ou l'URL — récente +10,
+   ancienne (≥ 6 ans) -10 ;
+5. **classement** : les sources sont triées par score décroissant dans
+   l'interface (badge « Fiabilité élevée/moyenne/faible · score », type
+   primaire/secondaire/tertiaire, et ligne des signaux explicatifs).
+
+Le scoring est appliqué aux routes `/api/analyze` et `/api/compare`, calculé
+côté serveur et conservé dans l'historique. Les analyses antérieures restent
+lisibles avec l'ancien affichage de repli.
+
 ## Roadmap proposée (par ordre de priorité)
 
 1. **Vérification au niveau du passage** : ~~implémentée~~ (voir ci-dessus) ;
-   étendre au rendu JavaScript (navigateur headless) et à la route `/api/compare`.
-2. **Scoring qualité des sources** : autorité du domaine, fraîcheur, type
-   primaire/secondaire, diversité, concordance.
+   à étendre au rendu JavaScript (navigateur headless) et à la route
+   `/api/compare`.
+2. **Scoring qualité des sources** : ~~implémenté~~ (voir ci-dessus) ;
+   à étendre avec une mesure d'indépendance entre sources (même propriétaire,
+   même agence) et un plafond de redondance par domaine.
 3. **Requêtes ciblées par claim** : générer une requête de recherche par claim
    clé plutôt qu'une seule recherche globale.
 4. Normalisation des marqueurs par longueur de texte + support multilingue.

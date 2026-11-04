@@ -25,8 +25,11 @@ ce qui relève de l'inférence prudente et ce qui reste non déterminable.
   - `internal_only` : lecture interne, aucune source externe ;
   - `external_research` : recherche web encadrée via l'API OpenAI
     Responses (outil `web_search_preview`), avec restitution des sources
-    consultées et vérification que les URLs citées par le modèle figurent
-    réellement dans les résultats de recherche.
+    consultées, vérification que les URLs citées par le modèle figurent
+    réellement dans les résultats de recherche, contrôle que les extraits
+    cités sont présents dans les pages (vérification au niveau du passage)
+    et score de qualité par source (catégorie du domaine, confirmation de
+    l'extrait, corroboration par les claims, fraîcheur).
 - **Comparaison de deux documents** : convergence/divergence, écart de cadrage,
   asymétrie d'étayage, angles morts communs.
 - **Historique et travail collaboratif** : comptes utilisateurs, espaces de

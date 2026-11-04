@@ -81,11 +81,76 @@ function shortenText(text: string, maxLength: number) {
   return `${clean.slice(0, maxLength).trimEnd()}…`;
 }
 
+function getQualityTierBadge(source: ExternalSourceItem) {
+  const quality = source.quality;
+  if (!quality) return null;
+
+  switch (quality.tier) {
+    case "elevee":
+      return (
+        <span className="inline-flex items-center rounded-full border border-emerald-400/30 bg-emerald-400/10 px-2.5 py-1 text-[11px] font-medium text-emerald-200">
+          Fiabilité élevée · {quality.score}
+        </span>
+      );
+    case "faible":
+      return (
+        <span className="inline-flex items-center rounded-full border border-amber-400/30 bg-amber-400/10 px-2.5 py-1 text-[11px] font-medium text-amber-200">
+          Fiabilité faible · {quality.score}
+        </span>
+      );
+    default:
+      return (
+        <span className="inline-flex items-center rounded-full border border-sky-400/30 bg-sky-400/10 px-2.5 py-1 text-[11px] font-medium text-sky-200">
+          Fiabilité moyenne · {quality.score}
+        </span>
+      );
+  }
+}
+
+function getSourceTypeBadge(source: ExternalSourceItem) {
+  const sourceType = source.quality?.sourceType;
+  if (!sourceType || sourceType === "indetermine") return null;
+
+  const labels: Record<string, string> = {
+    primaire: "Source primaire",
+    secondaire: "Source secondaire",
+    tertiaire: "Source tertiaire",
+  };
+
+  return (
+    <span className="inline-flex items-center rounded-full border border-white/10 bg-slate-900 px-2.5 py-1 text-[11px] font-medium text-slate-200">
+      {labels[sourceType]}
+    </span>
+  );
+}
+
+function getQualitySignals(source: ExternalSourceItem) {
+  const signals = source.quality?.signals;
+  if (!signals?.length) return null;
+
+  return (
+    <p className="mt-2 text-xs leading-5 text-slate-400">
+      {signals.join(" · ")}
+    </p>
+  );
+}
+
 function sortSources(sources: ExternalSourceItem[]) {
   return [...sources].sort((a, b) => {
+    const scoreA = a.quality?.score ?? null;
+    const scoreB = b.quality?.score ?? null;
+
+    if (scoreA !== null && scoreB !== null) {
+      if (scoreA !== scoreB) return scoreB - scoreA;
+    } else if (scoreA !== null) {
+      return -1;
+    } else if (scoreB !== null) {
+      return 1;
+    }
+
+    // Repli pour les sources antérieures au scoring : liste de confiance.
     const trustA = isHighTrustSource(a) ? 1 : 0;
     const trustB = isHighTrustSource(b) ? 1 : 0;
-
     if (trustA !== trustB) return trustB - trustA;
 
     const domainA = getDomain(a);
@@ -163,15 +228,22 @@ export function SourcesPanel({ sources }: SourcesPanelProps) {
                       {domain}
                     </span>
 
-                    <span
-                      className={
-                        trusted
-                          ? "inline-flex items-center rounded-full border border-sky-400/30 bg-sky-400/10 px-2.5 py-1 text-[11px] font-medium text-sky-200"
-                          : "inline-flex items-center rounded-full border border-amber-400/30 bg-amber-400/10 px-2.5 py-1 text-[11px] font-medium text-amber-200"
-                      }
-                    >
-                      {trusted ? "Source prioritaire" : "Source secondaire"}
-                    </span>
+                    {source.quality ? (
+                      <>
+                        {getQualityTierBadge(source)}
+                        {getSourceTypeBadge(source)}
+                      </>
+                    ) : (
+                      <span
+                        className={
+                          trusted
+                            ? "inline-flex items-center rounded-full border border-sky-400/30 bg-sky-400/10 px-2.5 py-1 text-[11px] font-medium text-sky-200"
+                            : "inline-flex items-center rounded-full border border-amber-400/30 bg-amber-400/10 px-2.5 py-1 text-[11px] font-medium text-amber-200"
+                        }
+                      >
+                        {trusted ? "Source prioritaire" : "Source secondaire"}
+                      </span>
+                    )}
 
                     {getVerificationBadge(source)}
                   </div>
@@ -204,6 +276,8 @@ export function SourcesPanel({ sources }: SourcesPanelProps) {
                   {snippet}
                 </p>
               ) : null}
+
+              {getQualitySignals(source)}
 
               <div className="mt-3 rounded-xl border border-white/10 bg-black/10 px-3 py-2">
                 <a

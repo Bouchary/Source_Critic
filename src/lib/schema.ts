@@ -19,12 +19,29 @@ export const sourceVerificationSchema = z.object({
 });
 export type SourceVerification = z.infer<typeof sourceVerificationSchema>;
 
+export const sourceQualityTierSchema = z.enum(["elevee", "moyenne", "faible"]);
+export const scoredSourceTypeSchema = z.enum([
+  "primaire",
+  "secondaire",
+  "tertiaire",
+  "indetermine",
+]);
+
+export const sourceQualitySchema = z.object({
+  score: z.number().min(0).max(100),
+  tier: sourceQualityTierSchema,
+  sourceType: scoredSourceTypeSchema,
+  signals: z.array(z.string()),
+});
+export type SourceQuality = z.infer<typeof sourceQualitySchema>;
+
 export const externalSourceItemSchema = z.object({
   title: z.string(),
   url: z.string(),
   snippet: z.string().optional().default(""),
   domain: z.string().optional().default(""),
   verification: sourceVerificationSchema.optional(),
+  quality: sourceQualitySchema.optional(),
 });
 export type ExternalSourceItem = z.infer<typeof externalSourceItemSchema>;
 

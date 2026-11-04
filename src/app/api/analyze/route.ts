@@ -21,6 +21,10 @@ import {
   collectCitedUrls,
   verifySourcePassages,
 } from "@/lib/passage-verification";
+import {
+  buildClaimCitationMap,
+  scoreExternalSources,
+} from "@/lib/source-scoring";
 import { auth } from "@/auth";
 
 export const runtime = "nodejs";
@@ -62,12 +66,18 @@ export async function POST(req: Request) {
         citedUrls,
       );
 
+      const scoredSources = scoreExternalSources(verifiedSources, {
+        claimCitations: buildClaimCitationMap(
+          externalResponse.result.auditTrail.claimAudit ?? [],
+        ),
+      });
+
       result = buildDeterministicAnalysisResult(
         externalResponse.result,
         payload,
-        verifiedSources,
+        scoredSources,
       );
-      sources = verifiedSources;
+      sources = scoredSources;
     } else {
       const response = await openai.responses.create({
         model: process.env.OPENAI_MODEL || "gpt-5",
