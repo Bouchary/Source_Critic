@@ -2,7 +2,12 @@ import type {
   AnalysisInput,
   AnalysisResult,
   AuditSourceChainItem,
+  ExternalSourceItem,
 } from "@/lib/schema";
+import {
+  attachClaimGrounding,
+  crossCheckTrustChain,
+} from "@/lib/claim-grounding";
 
 export interface AnalysisSignal {
   level: 0 | 1 | 2 | 3 | 4;
@@ -69,6 +74,7 @@ export interface AnalysisModelOutput {
       claimId: string;
       status: "soutenu" | "contesté" | "non déterminable";
       basis: string;
+      sourceUrls?: string[];
     }[];
     evidenceAlerts: string[];
   };
@@ -417,6 +423,7 @@ function normalizeSourceTrustChain(items: AuditSourceChainItem[] | undefined) {
 function normalizeAuditTrail(
   auditTrail: AnalysisModelOutput["auditTrail"],
   input: AnalysisInput,
+  externalSources: ExternalSourceItem[],
 ) {
   const profile = evidenceProfile(input);
 
@@ -433,8 +440,14 @@ function normalizeAuditTrail(
     confidenceBoundary:
       auditTrail.confidenceBoundary ||
       "Le rapport distingue ce qui est directement observable dans le texte, ce qui relève d’une inférence prudente et ce qui reste non déterminable.",
-    sourceTrustChain: normalizeSourceTrustChain(auditTrail.sourceTrustChain),
-    claimAudit: auditTrail.claimAudit || [],
+    sourceTrustChain: crossCheckTrustChain(
+      normalizeSourceTrustChain(auditTrail.sourceTrustChain),
+      externalSources,
+    ),
+    claimAudit: attachClaimGrounding(
+      auditTrail.claimAudit || [],
+      externalSources,
+    ),
     evidenceAlerts: fallbackAlerts,
   };
 }
@@ -442,6 +455,7 @@ function normalizeAuditTrail(
 export function buildDeterministicAnalysisResult(
   model: AnalysisModelOutput,
   input: AnalysisInput,
+  externalSources: ExternalSourceItem[] = [],
 ): AnalysisResult {
   const traceability = traceabilitySignal(input);
   const factualRobustness = factualRobustnessSignal(input);
@@ -502,6 +516,6 @@ export function buildDeterministicAnalysisResult(
     unknowns: model.unknowns,
     recommendations: model.recommendations,
     caveats: model.caveats,
-    auditTrail: normalizeAuditTrail(model.auditTrail, input),
+    auditTrail: normalizeAuditTrail(model.auditTrail, input, externalSources),
   };
 }

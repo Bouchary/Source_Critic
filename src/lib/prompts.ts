@@ -1,4 +1,4 @@
-﻿import type { AnalysisInput } from "@/lib/schema";
+import type { AnalysisInput } from "@/lib/schema";
 
 export const INTERNAL_SYSTEM_PROMPT = `
 Tu es un analyste méthodologique spécialisé dans l’analyse critique des sources.
@@ -125,6 +125,10 @@ Consignes :
 - nonInferableElements : ce qui ne peut pas être établi sans sources externes.
 - keyClaims : entre 6 et 10 items.
 - claimAudit : un item par keyClaim, avec claimId cohérent.
+- Pour chaque item de claimAudit, cite dans sourceUrls les URLs exactes des sources
+  de recherche web qui étayent le claim (uniquement des URLs présentes dans les
+  résultats de la recherche intégrée ; tableau vide si aucune source ne l'étaye,
+  ou en mode interne sans recherche externe).
 - sourceTrustChain : entre 0 et 8 items ; si mode interne sans source explicite, rester prudent.
 - Chaque item de sourceTrustChain doit toujours contenir :
   - title
@@ -282,8 +286,12 @@ export const ANALYSIS_JSON_SCHEMA = {
               claimId: { type: "string" },
               status: { type: "string" },
               basis: { type: "string" },
+              sourceUrls: {
+                type: "array",
+                items: { type: "string" },
+              },
             },
-            required: ["claimId", "status", "basis"],
+            required: ["claimId", "status", "basis", "sourceUrls"],
           },
         },
         evidenceAlerts: {

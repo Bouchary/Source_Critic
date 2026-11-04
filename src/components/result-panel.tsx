@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useMemo, useState } from "react";
 import type { AnalysisResult } from "@/lib/schema";
@@ -35,9 +35,22 @@ export function ResultPanel({ result }: { result: AnalysisResult }) {
   const [tab, setTab] = useState<TabKey>("resume");
 
   const claimAuditMap = useMemo(() => {
-    const map = new Map<string, { status: string; basis: string }>();
+    const map = new Map<
+      string,
+      {
+        status: string;
+        basis: string;
+        grounding?: "verifie" | "partiel" | "non_verifiable";
+        sourceUrls?: string[];
+      }
+    >();
     for (const item of result.auditTrail.claimAudit) {
-      map.set(item.claimId, { status: item.status, basis: item.basis });
+      map.set(item.claimId, {
+        status: item.status,
+        basis: item.basis,
+        grounding: item.grounding,
+        sourceUrls: item.sourceUrls,
+      });
     }
     return map;
   }, [result.auditTrail.claimAudit]);
@@ -166,6 +179,22 @@ export function ResultPanel({ result }: { result: AnalysisResult }) {
                         {audit.status}
                       </span>
                     ) : null}
+                    {audit?.grounding === "verifie" ? (
+                      <span className="rounded-full border border-emerald-400/20 bg-emerald-400/10 px-2.5 py-1 text-xs text-emerald-200">
+                        étayage vérifié
+                        {audit.sourceUrls && audit.sourceUrls.length > 0
+                          ? ` · ${audit.sourceUrls.length} source${audit.sourceUrls.length > 1 ? "s" : ""}`
+                          : ""}
+                      </span>
+                    ) : audit?.grounding === "partiel" ? (
+                      <span className="rounded-full border border-amber-400/20 bg-amber-400/10 px-2.5 py-1 text-xs text-amber-200">
+                        étayage partiel · source non retrouvée
+                      </span>
+                    ) : audit?.grounding === "non_verifiable" ? (
+                      <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-xs text-slate-300">
+                        étayage non vérifiable
+                      </span>
+                    ) : null}
                   </div>
 
                   <p className="mt-3 text-sm font-medium text-white">{claim.excerpt}</p>
@@ -176,6 +205,21 @@ export function ResultPanel({ result }: { result: AnalysisResult }) {
                     <div className="mt-3 rounded-2xl border border-white/10 bg-white/5 p-3">
                       <p className="text-xs uppercase tracking-wide text-slate-400">Base d’audit</p>
                       <p className="mt-2 text-sm leading-6 text-slate-300">{audit.basis}</p>
+                      {audit.sourceUrls && audit.sourceUrls.length > 0 ? (
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          {audit.sourceUrls.map((url) => (
+                            <a
+                              key={url}
+                              href={url}
+                              target="_blank"
+                              rel="noreferrer noopener"
+                              className="break-all rounded-full border border-emerald-400/20 bg-emerald-400/10 px-2.5 py-1 text-xs text-emerald-200 underline"
+                            >
+                              {url}
+                            </a>
+                          ))}
+                        </div>
+                      ) : null}
                     </div>
                   ) : null}
                 </div>
@@ -211,6 +255,15 @@ export function ResultPanel({ result }: { result: AnalysisResult }) {
                           <span className="rounded-full border border-white/10 bg-slate-900 px-2 py-1 text-xs text-slate-200">
                             fiabilité {item.reliability}
                           </span>
+                          {item.verifiedInSearch === true ? (
+                            <span className="rounded-full border border-emerald-400/20 bg-emerald-400/10 px-2 py-1 text-xs text-emerald-200">
+                              présente dans la recherche
+                            </span>
+                          ) : item.verifiedInSearch === false ? (
+                            <span className="rounded-full border border-amber-400/20 bg-amber-400/10 px-2 py-1 text-xs text-amber-200">
+                              non retrouvée dans la recherche
+                            </span>
+                          ) : null}
                           {item.domain ? (
                             <span className="rounded-full border border-white/10 bg-slate-900 px-2 py-1 text-xs text-slate-200">
                               {item.domain}
