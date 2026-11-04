@@ -11,6 +11,62 @@ function normalizeUrl(value: string) {
   }
 }
 
+const TRACKING_PARAM_PREFIXES = [
+  "utm_",
+  "fbclid",
+  "gclid",
+  "msclkid",
+  "mc_",
+  "igshid",
+  "ref_src",
+  "ref_url",
+  "spm",
+  "scm",
+];
+
+/**
+ * Clé canonique utilisée pour comparer/dédupliquer deux URLs :
+ * - hash supprimé (ancres)
+ * - paramètres de suivi supprimés (utm_*, fbclid, gclid, ...)
+ * - protocole http/https normalisé vers https
+ * - host en minuscules, "www." retiré
+ * - slash final retiré (hors racine)
+ */
+export function canonicalUrlKey(value: string) {
+  const trimmed = value.trim();
+  if (!trimmed) return "";
+
+  let url: URL;
+  try {
+    url = new URL(trimmed);
+  } catch {
+    return trimmed.toLowerCase();
+  }
+
+  url.hash = "";
+  url.hostname = url.hostname.toLowerCase().replace(/^www\./, "");
+
+  if (url.protocol === "http:") url.protocol = "https:";
+
+  for (const key of [...url.searchParams.keys()]) {
+    const lowered = key.toLowerCase();
+    if (
+      TRACKING_PARAM_PREFIXES.some(
+        (prefix) => lowered.startsWith(prefix),
+      )
+    ) {
+      url.searchParams.delete(key);
+    }
+  }
+
+  let out = url.toString();
+  if (out.endsWith("/") && url.pathname !== "/") {
+    out = out.slice(0, -1);
+  }
+
+  return out;
+}
+
 function hostnameFromUrl(url: string) {
   try {
     return new URL(url).hostname.replace(/^www\./, "");
@@ -179,8 +235,10 @@ export function extractExternalSources(response: unknown): ExternalSourceItem[] 
   return acc.filter((item) => {
     const normalized = normalizeUrl(item.url);
     if (!normalized) return false;
-    if (seen.has(normalized)) return false;
-    seen.add(normalized);
+
+    const key = canonicalUrlKey(normalized);
+    if (seen.has(key)) return false;
+    seen.add(key);
 
     item.url = normalized;
     item.domain = item.domain?.trim() || hostnameFromUrl(normalized);

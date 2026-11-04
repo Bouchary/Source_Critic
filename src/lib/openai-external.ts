@@ -78,29 +78,46 @@ export async function createExternalStructuredResponse<T>(params: {
     throw new Error("OPENAI_API_KEY manquant côté serveur.");
   }
 
-  const response = await fetch("https://api.openai.com/v1/responses", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model: process.env.OPENAI_MODEL || "gpt-5",
-      instructions: params.instructions,
-      input: params.input,
-      tools: [{ type: "web_search_preview" }],
-      tool_choice: "required",
-      include: ["web_search_call.action.sources"],
-      text: {
-        format: {
-          type: "json_schema",
-          name: params.name,
-          schema: params.schema,
-          strict: true,
-        },
+  const timeoutMs = Number(process.env.OPENAI_EXTERNAL_TIMEOUT_MS) || 180_000;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
+  let response: Response;
+  try {
+    response = await fetch("https://api.openai.com/v1/responses", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
       },
-    }),
-  });
+      body: JSON.stringify({
+        model: process.env.OPENAI_MODEL || "gpt-5",
+        instructions: params.instructions,
+        input: params.input,
+        tools: [{ type: "web_search_preview" }],
+        tool_choice: "required",
+        include: ["web_search_call.action.sources"],
+        text: {
+          format: {
+            type: "json_schema",
+            name: params.name,
+            schema: params.schema,
+            strict: true,
+          },
+        },
+      }),
+      signal: controller.signal,
+    });
+  } catch (error) {
+    if (error instanceof Error && error.name === "AbortError") {
+      throw new Error(
+        `La recherche externe a dépassé le délai de ${Math.round(timeoutMs / 1000)} s.`,
+      );
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeout);
+  }
 
   const contentType = response.headers.get("content-type") || "";
   const rawHttpBody = await response.text();

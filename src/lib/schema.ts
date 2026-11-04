@@ -1,4 +1,4 @@
-﻿import { z } from "zod";
+import { z } from "zod";
 
 export const analysisModeSchema = z.enum(["internal_only", "external_research"]);
 export type AnalysisMode = z.infer<typeof analysisModeSchema>;
@@ -49,12 +49,22 @@ export interface AuditSourceChainItem {
   sourceType: "primaire" | "secondaire" | "tertiaire" | "indéterminé";
   reliability: "élevée" | "moyenne" | "faible";
   rationale: string;
+  /**
+   * true si l'URL citée figure dans les résultats de recherche externe,
+   * false si elle est citée mais absente (risque d'hallucination),
+   * undefined si aucune URL n'est citée.
+   */
+  verifiedInSearch?: boolean;
 }
 
 export interface ClaimAuditItem {
   claimId: string;
   status: "soutenu" | "contesté" | "non déterminable";
   basis: string;
+  /** URLs des sources de recherche qui étayent le claim, vérifiées côté application. */
+  sourceUrls?: string[];
+  /** Statut d'étayage calculé côté application à partir des résultats de recherche. */
+  grounding?: "verifie" | "partiel" | "non_verifiable";
 }
 
 export interface AnalysisResult {

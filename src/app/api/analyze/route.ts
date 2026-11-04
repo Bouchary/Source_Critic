@@ -1,4 +1,4 @@
-﻿import { NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import {
   analysisInputSchema,
   type AnalysisResult,
@@ -52,7 +52,11 @@ export async function POST(req: Request) {
           name: "source_critic_analysis_v37",
         });
 
-      result = buildDeterministicAnalysisResult(externalResponse.result, payload);
+      result = buildDeterministicAnalysisResult(
+        externalResponse.result,
+        payload,
+        externalResponse.sources,
+      );
       sources = externalResponse.sources;
     } else {
       const response = await openai.responses.create({
