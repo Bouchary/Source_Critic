@@ -12,6 +12,10 @@ import {
 } from "@/lib/compare-prompts";
 import { saveComparisonToDb } from "@/lib/history-db";
 import { createExternalStructuredResponse } from "@/lib/openai-external";
+import {
+  buildClaimCitationMap,
+  scoreExternalSources,
+} from "@/lib/source-scoring";
 import { openai } from "@/lib/openai";
 import {
   buildDeterministicComparisonResult,
@@ -52,11 +56,18 @@ export async function POST(req: Request) {
           name: "source_critic_compare_v35",
         });
 
+      sources = scoreExternalSources(externalResponse.sources, {
+        claimCitations: buildClaimCitationMap(
+          externalResponse.result.auditTrail?.sourceTrustChain?.map((item) => ({
+            sourceUrls: item.url ? [item.url] : [],
+          })) ?? [],
+        ),
+      });
+
       result = buildDeterministicComparisonResult(
         externalResponse.result,
         payload,
       );
-      sources = externalResponse.sources;
     } else {
       const response = await openai.responses.create({
         model: process.env.OPENAI_MODEL || "gpt-5",

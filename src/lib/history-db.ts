@@ -60,6 +60,40 @@ function prismaStatusToApp(status: PrismaRunStatus): AppRunStatus {
   return "draft";
 }
 
+function normalizeQuality(value: Record<string, unknown>) {
+  const tier = typeof value.tier === "string" ? value.tier : "";
+  const sourceType =
+    typeof value.sourceType === "string" ? value.sourceType : "";
+  const score = typeof value.score === "number" ? value.score : null;
+
+  const knownTiers = ["elevee", "moyenne", "faible"] as const;
+  const knownTypes = [
+    "primaire",
+    "secondaire",
+    "tertiaire",
+    "indetermine",
+  ] as const;
+
+  if (
+    score === null ||
+    !knownTiers.includes(tier as (typeof knownTiers)[number]) ||
+    !knownTypes.includes(sourceType as (typeof knownTypes)[number])
+  ) {
+    return undefined;
+  }
+
+  return {
+    score,
+    tier: tier as (typeof knownTiers)[number],
+    sourceType: sourceType as (typeof knownTypes)[number],
+    signals: Array.isArray(value.signals)
+      ? value.signals.filter(
+          (signal): signal is string => typeof signal === "string",
+        )
+      : [],
+  };
+}
+
 function normalizeSources(value: unknown): ExternalSourceItem[] {
   if (!Array.isArray(value)) return [];
 
@@ -75,6 +109,10 @@ function normalizeSources(value: unknown): ExternalSourceItem[] {
           ? normalizeVerification(
               item.verification as Record<string, unknown>,
             )
+          : undefined,
+      quality:
+        item.quality && typeof item.quality === "object"
+          ? normalizeQuality(item.quality as Record<string, unknown>)
           : undefined,
     }))
     .filter((item) => item.url.trim().length > 0);
